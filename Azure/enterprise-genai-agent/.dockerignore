@@ -1,0 +1,36 @@
+# ==============================================================================
+# ARCHIVO:        .dockerignore
+# DESCRIPCIÓN:    Excluye archivos locales del contexto de construcción de Docker.
+# AUTOR:          Edith BG
+# FECHA:          2026-07-25
+# ==============================================================================
+
+# Entornos virtuales locales
+.venv/
+venv/
+env/
+ENV/
+
+# Caché de ejecución y compilación de Python
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Infraestructura e historial de Terraform
+infrastructure/.terraform/
+infrastructure/.terraform.lock.hcl
+infrastructure/*.tfstate
+infrastructure/*.tfstate.backup
+infrastructure/*.binary
+
+# Archivos de configuración local y secretos sensibles
+.env
+.git/
+.gitignore
+.vscode/
+.idea/
+*.DS_Store

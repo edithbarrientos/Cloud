@@ -1,0 +1,27 @@
+# ==============================================================================
+# ARCHIVO:        requirements.txt
+# DESCRIPCIÓN:    Dependencias de producción optimizadas para la imagen de Azure.
+# AUTOR:          Edith BG
+# FECHA:          2026-07-26
+# VERSIÓN:        1.2.0
+# ESTADO:         Enterprise Ready / Production Clean (No Dev Tools)
+# ==============================================================================
+
+# --- CORE: FRAMEWORK WEB Y ASINCRONÍA ---
+fastapi==0.115.6          
+uvicorn[standard]==0.34.0 
+pydantic>=2.10.0,<=2.11.0  
+pydantic-settings>=2.4.0   # <-- INCLUSIÓN OBLIGATORIA: Requerido por config.py
+
+# --- AZURE CORE Y OPENAI BACKEND ---
+openai>=1.35.0             # =1.17.0,<=1.19.0
+semantic-kernel>=1.2.0     
+
+# --- GESTIÓN DE RESILIENCIA Y NETWORK ---
+tenacity==8.3.0
+httpx==0.28.1
+
+# --- MONITOREO Y TELEMETRÍA (AZURE NATIVO) ---
+opentelemetry-api==1.36.0
+opentelemetry-sdk==1.36.0
+azure-monitor-opentelemetry==1.6.13
