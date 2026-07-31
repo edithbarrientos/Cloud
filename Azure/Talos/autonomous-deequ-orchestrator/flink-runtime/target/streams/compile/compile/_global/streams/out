@@ -1,0 +1,23 @@
+[0m[[0m[31merror[0m] [0m[0m/Users/edithbg/PoC/Cloud/Azure/Talos/autonomous-deequ-orchestrator/flink-runtime/src/main/scala/com/orchestra/ado/stream/EventConsumer.scala:5:36: object api is not a member of package org.apache.flink.api.common[0m
+[0m[[0m[31merror[0m] [0m[0mimport org.apache.flink.api.common.api.Boundedness[0m
+[0m[[0m[31merror[0m] [0m[0m                                   ^[0m
+[0m[[0m[31merror[0m] [0m[0m/Users/edithbg/PoC/Cloud/Azure/Talos/autonomous-deequ-orchestrator/flink-runtime/src/main/scala/com/orchestra/ado/stream/EventConsumer.scala:7:35: object kafka is not a member of package org.apache.flink.connector[0m
+[0m[[0m[31merror[0m] [0m[0mimport org.apache.flink.connector.kafka.source.KafkaSource[0m
+[0m[[0m[31merror[0m] [0m[0m                                  ^[0m
+[0m[[0m[31merror[0m] [0m[0m/Users/edithbg/PoC/Cloud/Azure/Talos/autonomous-deequ-orchestrator/flink-runtime/src/main/scala/com/orchestra/ado/stream/EventConsumer.scala:8:35: object kafka is not a member of package org.apache.flink.connector[0m
+[0m[[0m[31merror[0m] [0m[0mimport org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer[0m
+[0m[[0m[31merror[0m] [0m[0m                                  ^[0m
+[0m[[0m[31merror[0m] [0m[0m/Users/edithbg/PoC/Cloud/Azure/Talos/autonomous-deequ-orchestrator/flink-runtime/src/main/scala/com/orchestra/ado/stream/EventConsumer.scala:64:12: value setBoundedness is not a member of org.apache.flink.connector.pulsar.source.PulsarSourceBuilder[String][0m
+[0m[[0m[31merror[0m] [0m[0mpossible cause: maybe a semicolon is missing before `value setBoundedness'?[0m
+[0m[[0m[31merror[0m] [0m[0m          .setBoundedness(Boundedness.CONTINUOUS_UNBOUNDED) // ⚡ CORRECCIÓN: Firma nativa Flink 1.18 API Core[0m
+[0m[[0m[31merror[0m] [0m[0m           ^[0m
+[0m[[0m[31merror[0m] [0m[0m/Users/edithbg/PoC/Cloud/Azure/Talos/autonomous-deequ-orchestrator/flink-runtime/src/main/scala/com/orchestra/ado/stream/EventConsumer.scala:64:27: not found: value Boundedness[0m
+[0m[[0m[31merror[0m] [0m[0m          .setBoundedness(Boundedness.CONTINUOUS_UNBOUNDED) // ⚡ CORRECCIÓN: Firma nativa Flink 1.18 API Core[0m
+[0m[[0m[31merror[0m] [0m[0m                          ^[0m
+[0m[[0m[31merror[0m] [0m[0m/Users/edithbg/PoC/Cloud/Azure/Talos/autonomous-deequ-orchestrator/flink-runtime/src/main/scala/com/orchestra/ado/stream/EventConsumer.scala:71:27: not found: value KafkaSource[0m
+[0m[[0m[31merror[0m] [0m[0m        val kafkaSource = KafkaSource.builder[String]()[0m
+[0m[[0m[31merror[0m] [0m[0m                          ^[0m
+[0m[[0m[31merror[0m] [0m[0m/Users/edithbg/PoC/Cloud/Azure/Talos/autonomous-deequ-orchestrator/flink-runtime/src/main/scala/com/orchestra/ado/stream/EventConsumer.scala:75:31: not found: value OffsetsInitializer[0m
+[0m[[0m[31merror[0m] [0m[0m          .setStartingOffsets(OffsetsInitializer.latest())[0m
+[0m[[0m[31merror[0m] [0m[0m                              ^[0m
+[0m[[0m[31merror[0m] [0m[0m7 errors found[0m

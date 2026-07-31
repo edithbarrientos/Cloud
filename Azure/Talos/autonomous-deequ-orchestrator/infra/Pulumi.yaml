@@ -1,0 +1,6 @@
+name: orchestra-governance-plane
+runtime:
+  name: python
+  options:
+    virtualenv: ../.venv
+description: Plano de control elástico para la infraestructura de Orchestra Data Labs.
