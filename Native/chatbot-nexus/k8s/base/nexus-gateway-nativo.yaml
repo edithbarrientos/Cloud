@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nexus-internal-proxy
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nexus-proxy
+  template:
+    metadata:
+      labels:
+        app: nexus-proxy
+    spec:
+      containers:
+      - name: nginx
+        image: docker.io/library/nginx:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+      volumes:
+      - name: config-volume
+        configMap:
+          name: nexus-proxy-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nexus-proxy-config
+  namespace: default
+data:
+  nginx.conf: |
+    events {
+        worker_connections 1024;
+    }
+    http {
+        # 🚀 DNS por defecto del núcleo de K3s de Colima para enlazar los namespaces
+        resolver 10.43.0.10 valid=5s;
+
+        server {
+            listen 80;
+            server_tokens off;
+
+            # 🧠 REGLA 1: Streaming gRPC hacia tu script de Python v12 real
+            location /api/chat/stream {
+                set $backend_grpc grpc://chatbot-backend-service.nexus-mesh.svc.cluster.local:50051;
+                grpc_pass $backend_grpc;
+                grpc_read_timeout 3600s;
+                grpc_send_timeout 3600s;
+            }
+
+            # 📺 REGLA 2: Redirección hacia tu UI web en el puerto 8080 del namespace mesh
+            location / {
+                set $backend_ui http://cluster.local;
+                proxy_pass $backend_ui;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_http_version 1.1;
+                proxy_set_header Connection "";
+            }
+        }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nexus-gateway-interno
+  namespace: default
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+  selector:
+    app: nexus-proxy

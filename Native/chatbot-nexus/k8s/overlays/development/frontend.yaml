@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-ui-web
+  namespace: nexus-mesh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dev-ui-web
+  template:
+    metadata:
+      labels:
+        app: dev-ui-web
+    spec:
+      containers:
+      - name: web-nginx
+        image: dev-ui-web:v13
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+          name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dev-ui-web-service
+  namespace: nexus-mesh
+spec:
+  type: ClusterIP
+  selector:
+    app: dev-ui-web
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 80

@@ -1,0 +1,92 @@
+version: '3.8'
+
+networks:
+  chatbot-cluster-mesh:
+    driver: bridge
+
+services:
+  # --- NODE 01: CAPA DE ACCESO CON GUNICORN MASTER ---
+  chatbot-ui:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: tu-registro/chatbot-ui:latest
+    # 🚀 CONFIGURACIÓN GUNICORN ENTERPRISE:
+    # -w 4: Abre 4 procesos trabajadores en paralelo para alta concurrencia
+    # -k uvicorn.workers.UvicornWorker: Usa el motor asíncronico rápido ASGI
+    command: ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8501", "chainlit.cli:app"]
+    ports:
+      - "8501:8501"
+    environment:
+      - ENVIRONMENT=development
+      - CHATBOT_API_URL=chatbot-backend:50051
+    networks:
+      - chatbot-cluster-mesh
+    depends_on:
+      - chatbot-backend
+
+  chatbot-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tu-registro/chatbot-backend:latest
+    command: ["python", "src/main.py"]
+    ports:
+      - "50051:50051"
+    environment:
+      - ENVIRONMENT=development
+      - REDIS_URL=redis://redis-cache:6379/0
+      - OLLAMA_API_URL=http://ollama-ai:11434
+      - MODEL_NAME=deepseek-r1:1.5b
+    networks:
+      - chatbot-cluster-mesh
+    depends_on:
+      - redis-cache
+      - ollama-ai
+
+  ollama-ai:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_store:/root/.ollama
+    environment:
+      - MODEL_TO_RUN=deepseek-r1:1.5b
+    networks:
+      - chatbot-cluster-mesh
+    entrypoint: [ "/bin/sh", "-c", "ollama serve & sleep 5 && ollama run $${MODEL_TO_RUN} && wait" ]
+
+  redis-cache:
+    image: redis:7.2-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_store:/data
+    networks:
+      - chatbot-cluster-mesh
+
+  mcp-qdrant-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: ["python", "src/mcp_server.py"]
+    environment:
+      - QDRANT_HOST=qdrant-vector
+      - QDRANT_PORT=6333
+    networks:
+      - chatbot-cluster-mesh
+    depends_on:
+      - qdrant-vector
+
+  qdrant-vector:
+    image: qdrant/qdrant:v1.9.0
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_store:/qdrant/storage
+    networks:
+      - chatbot-cluster-mesh
+
+volumes:
+  ollama_store:
+  redis_store:
+  qdrant_store:

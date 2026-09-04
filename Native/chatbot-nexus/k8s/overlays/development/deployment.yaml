@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatbot-backend
+  namespace: nexus-mesh
+spec:
+  template:
+    spec:
+      containers:
+      - name: backend
+        image: chatbot-backend:v4
+        imagePullPolicy: Never
+        # 🚀 Comando correcto para el orquestador gRPC de IA
+        command: ["gunicorn"]
+        args: ["-b", "0.0.0.0:50051", "src.main:app"]
+        env:
+        - name: PATH
+          value: "/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        - name: PYTHONPATH
+          value: "/app:/app/src"
+        - name: ENVIRONMENT
+          value: "development"

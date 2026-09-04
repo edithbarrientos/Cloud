@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Mesh AI Engine</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://googleapis.com" rel="stylesheet">
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <div class="brand-wrapper">
+                <div class="status-dot"></div>
+                <div>
+                    <h1>Nexus Chatbot v12</h1>
+                    <span>DeepSeek-R1 Core Local</span>
+                </div>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-family: monospace;">K3s Distributed Cluster</div>
+        </div>
+        <div class="chat-box" id="chat-box">
+            <div class="message bot-msg">🤖 Bienvenido al nodo central de Nexus. ¿En qué puedo asistir a tu clúster distribuido en este segundo?</div>
+        </div>
+        <div class="chat-input-area">
+            <div class="input-wrapper">
+                <input type="text" id="user-input" placeholder="Escribe un mensaje de control aquí..." autocomplete="off">
+                <button id="send-btn">Enviar</button>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

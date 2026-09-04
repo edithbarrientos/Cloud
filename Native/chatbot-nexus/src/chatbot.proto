@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package chatbot;
+
+service ChatbotService {
+  // RPC con soporte para Server Streaming (Envío de tokens palabra por palabra)
+  rpc ProcesarMensajeStream (ChatRequest) returns (stream ChatResponse);
+}
+
+message ChatRequest {
+  string raw_message = 1;
+  string customer_id = 2;
+  string source = 3;
+}
+
+message ChatResponse {
+  string id = 1;
+  string customer_id = 2;
+  string chunk_message = 3;  // Fragmento incremental de texto generado
+  bool is_finished = 4;      // Flag que indica el fin de la generación del stream
+  string created_at = 5;
+}

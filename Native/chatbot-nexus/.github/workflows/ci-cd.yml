@@ -1,0 +1,113 @@
+name: 🚀 E2E GitOps CI/CD Enterprise Pipeline (Chatbot Nexus)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: write      # Requerido para actualizar los manifiestos de Kubernetes de forma autónoma
+  security-events: write
+
+jobs:
+  code-quality-and-testing:
+    name: 🧪 Calidad, Seguridad y Pruebas
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Clonar Código Fuente
+      uses: actions/checkout@v4
+
+    - name: 🐍 Configurar Entorno Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+
+    - name: 📦 Instalar Dependencias del Sistema
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8 safety pytest pytest-asyncio
+
+    - name: 🔍 Validar Sintaxis de Código (Linter)
+      run: |
+        # Detiene la ejecución si hay errores de sintaxis graves
+        flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Advertencias de estilo estandarizadas
+        flake8 src/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: 🛡️ Escaneo de Seguridad en Librerías (Safety)
+      run: |
+        safety check -r requirements.txt || echo "⚠️ Advertencia: Se detectaron vulnerabilidades menores."
+
+    - name: 🏁 Ejecutar Suite de Pruebas Automatizadas (Pytest)
+      run: |
+        pytest -v --asyncio-mode=strict
+
+  build-and-delivery:
+    name: 🐳 Compilación, Escaneo y Despliegue GitOps
+    needs: code-quality-and-testing
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+    - name: 📥 Clonar Código Fuente
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }} # Permite hacer push de vuelta al repositorio con el nuevo tag
+
+    - name: 🛠️ Configurar Docker Buildx (BuildKit)
+      uses: docker/setup-buildx-action@v3
+
+    - name: 🔑 Autenticar en Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: 🐳 Construir Imagen Local para Escaneo
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        load: true
+        tags: chatbot-nexus:test-audit
+
+    - name: 🛡️ Escaneo de Contenedores de la CNCF (Trivy Security)
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'chatbot-nexus:test-audit'
+        format: 'table'
+        exit-code: '1' # Detiene el pipeline inmediatamente si encuentra vulnerabilidades CRÍTICAS
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL'
+
+    - name: 🚀 Empaquetar y Distribuir Imagen de Producción
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        cache-from: type=gha # Caché interna optimizada de GitHub Actions
+        cache-to: type=gha,mode=max
+        tags: |
+          ${{ secrets.DOCKERHUB_USERNAME }}/chatbot-nexus:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/chatbot-nexus:${{ github.sha }}
+
+    # 🚀 NUEVO PASO DE GITOPS AUTOMATIZADO (ArgoCD / FluxCD Synchronization)
+    - name: 🔧 Configurar Kustomize en el Agente
+      uses: imranismail/setup-kustomize@v2
+
+    - name: 🏷️ Actualizar Tag de la Imagen en Manifiestos de Kubernetes
+      run: |
+        cd k8s/overlays/production
+        # Kustomize edita dinámicamente el YAML inyectando la versión exacta construida por el commit anterior
+        kustomize edit set image tu-registro/chatbot-backend=${{ secrets.DOCKERHUB_USERNAME }}/chatbot-nexus:${{ github.sha }}
+        kustomize edit set image tu-registro/chatbot-ui=${{ secrets.DOCKERHUB_USERNAME }}/chatbot-nexus:${{ github.sha }}
+
+    - name: 📝 Auto-Commit de Infraestructura GitOps
+      run: |
+        git config --local user.email "actions@github.com"
+        git config --local user.name "GitHub Actions Bot"
+        git add k8s/overlays/production/kustomization.yaml
+        git commit -m "🚀 gitops(prod): auto-update k8s deployment image to tag ${{ github.sha }} [skip ci]"
+        git push origin main

@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: qdrant-vector-db
+  namespace: nexus-mesh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: qdrant-db
+  template:
+    metadata:
+      labels:
+        app: qdrant-db
+    spec:
+      containers:
+      - name: qdrant
+        image: qdrant/qdrant:v1.9.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: QDRANT__FORCE_DISABLE_TELEMETRY
+          value: "true"
+        ports:
+        - containerPort: 6333
+          name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: qdrant-service
+  namespace: nexus-mesh
+spec:
+  type: ClusterIP
+  selector:
+    app: qdrant-db
+  ports:
+  - name: http
+    port: 6333
+    targetPort: 6333
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-cache
+  namespace: nexus-mesh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-cache
+  template:
+    metadata:
+      labels:
+        app: redis-cache
+    spec:
+      containers:
+      - name: redis
+        image: redis:7.2-alpine
+        command: ["redis-server", "--appendonly", "yes"]
+        ports:
+        - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cache
+  namespace: nexus-mesh
+spec:
+  type: ClusterIP
+  selector:
+    app: redis-cache
+  ports:
+  - port: 6379
+    targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama-deployment
+  namespace: nexus-mesh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama-ai
+  template:
+    metadata:
+      labels:
+        app: ollama-ai
+    spec:
+      dnsPolicy: "Default"
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "0"
+      containers:
+      - name: ollama
+        image: ollama/ollama:0.1.48
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 11434
+          name: api
+        resources:
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-service
+  namespace: nexus-mesh
+spec:
+  type: ClusterIP
+  selector:
+    app: ollama-ai
+  ports:
+  - port: 11434
+    targetPort: 11434

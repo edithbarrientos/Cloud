@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chatbot-ingress
+  namespace: nexus-mesh
+  annotations:
+    nginx.ingress.kubernetes.io/websocket-services: "dev-ui-service"
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "route"
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: dev-ui-service # 🚀 Corregido: Nombre real de tu servicio web
+            port:
+              number: 8501

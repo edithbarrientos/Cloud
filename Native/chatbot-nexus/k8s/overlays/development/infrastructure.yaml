@@ -1,0 +1,216 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: nexus-mesh
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: chatbot-network-bridge
+  namespace: nexus-mesh
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector: {}
+  egress:
+  - to:
+    - podSelector: {}
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: UDP
+      port: 53
+    - protocol: TCP
+      port: 53
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 443
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dev-ui
+  namespace: nexus-mesh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dev-ui
+  template:
+    metadata:
+      labels:
+        app: dev-ui
+    spec:
+      containers:
+      - name: ui
+        image: dev-ui:v5
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8501
+        env:
+        - name: PYTHONPATH
+          value: "/app:/home/appuser/.local/lib/python3.11/site-packages"
+        - name: BACKEND_GRPC_URL
+          value: "chatbot-backend-v9-service.nexus-mesh.svc.cluster.local:50051"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatbot-ui-service
+  namespace: nexus-mesh
+spec:
+  type: ClusterIP
+  selector:
+    app: dev-ui
+  ports:
+  - name: http
+    port: 8501
+    targetPort: 8501
+---
+# 🧠 CORE gRPC: Ejecución con tu Servidor nativo de alto rendimiento Python asíncrono
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatbot-backend-v9
+  namespace: nexus-mesh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chatbot-backend-v9
+  template:
+    metadata:
+      labels:
+        app: chatbot-backend-v9
+    spec:
+      containers:
+      - name: backend
+        image: chatbot-backend:v9
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 50051
+        env:
+        - name: PYTHONPATH
+          value: "/app:/app/src:/home/appuser/.local/lib/python3.11/site-packages"
+        - name: REDIS_URL
+          value: "redis://redis-cache.nexus-mesh.svc.cluster.local:6379/0"
+        - name: OLLAMA_API_URL
+          value: "http://ollama-service:11434"
+        - name: OLLAMA_MODEL
+          value: "deepseek-r1:1.5b"
+      - name: mcp-server
+        image: alpine:latest
+        imagePullPolicy: IfNotPresent
+        command: ["/bin/sh", "-c", "echo 'MCP Server activo'; sleep infinity"]
+      - name: qdrant-vector
+        image: qdrant/qdrant:v1.9.0
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: QDRANT__FORCE_DISABLE_TELEMETRY
+          value: "true"
+        ports:
+        - containerPort: 6333
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatbot-backend-v9-service
+  namespace: nexus-mesh
+spec:
+  type: ClusterIP
+  selector:
+    app: chatbot-backend-v9
+  ports:
+  - name: grpc
+    port: 50051
+    targetPort: 50051
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-cache
+  namespace: nexus-mesh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis-cache
+  template:
+    metadata:
+      labels:
+        app: redis-cache
+    spec:
+      containers:
+      - name: redis
+        image: redis:7.2-alpine
+        command: ["redis-server", "--appendonly", "yes"]
+        ports:
+        - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cache
+  namespace: nexus-mesh
+spec:
+  type: ClusterIP
+  selector:
+    app: redis-cache
+  ports:
+  - port: 6379
+    targetPort: 6379
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama-deployment
+  namespace: nexus-mesh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama-ai
+  template:
+    metadata:
+      labels:
+        app: ollama-ai
+    spec:
+      dnsPolicy: "Default"
+      dnsConfig:
+        options:
+          - name: ndots
+            value: "0"
+      containers:
+      - name: ollama
+        image: ollama/ollama:0.1.48
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 11434
+          name: api
+        resources:
+          limits:
+            memory: "4Gi"
+            cpu: "2000m"
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama-service
+  namespace: nexus-mesh
+spec:
+  type: ClusterIP
+  selector:
+    app: ollama-ai
+  ports:
+  - port: 11434
+    targetPort: 11434
