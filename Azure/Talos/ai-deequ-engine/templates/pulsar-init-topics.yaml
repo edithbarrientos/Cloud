@@ -1,0 +1,62 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-pulsar-topic-provisioner
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: pulsar-topic-provisioner
+spec:
+  # 🚀 AUTOMATIZACIÓN DE LIMPIEZA: Borra el pod de la Mac 60 segundos después de terminar con éxito
+  ttlSecondsAfterFinished: 60
+  # 🚀 CONTROL DE TIEMPO LÍMITE: Si el Job se traba por más de 5 minutos, se autodestruye para no congelar Colima
+  activeDeadlineSeconds: 300
+  backoffLimit: 4
+  template:
+    spec:
+      restartPolicy: OnFailure
+      # 🚀 VALIDACIÓN ACTIVA: Detiene el pod principal hasta que el Proxy responda en la red interna
+      initContainers:
+        - name: wait-for-pulsar-proxy
+          image: "curlimages/curl:8.2.1"
+          command:
+            - sh
+            - -c
+            - |
+              until curl -s --connect-timeout 2 http://\{\{ .Release.Name }}-pulsar-proxy:8080/metrics > /dev/null; do
+                echo "Esperando conexión con Apache Pulsar Proxy..."
+                sleep 3
+              done
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "64Mi"
+      containers:
+        - name: provisioner
+          image: "apachepulsar/pulsar:3.0.2"
+          command:
+            - sh
+            - -c
+            - |
+              set -e # Terminar el Job inmediatamente ante cualquier excepción interna
+              
+              echo "Iniciando aprovisionamiento de la malla cognitiva..."
+              
+              # 1. Crear Inquilino Maestro DAMA (Atrapando existencia previa)
+              bin/pulsar-admin tenants create orchestra || echo "Tenant ya configurado."
+              
+              # 2. Crear Namespace Aislado de Calidad
+              bin/pulsar-admin namespaces create orchestra/quality-mesh || echo "Namespace ya configurado."
+              
+              # 3. Establecer TTL de 1 hora para mitigar retención de datos en disco
+              bin/pulsar-admin namespaces set-message-ttl orchestra/quality-mesh --ttl 3600
+              
+              # 4. Crear Malla de Tópicos Estructurales del Chat de la JVM
+              bin/pulsar-admin topics create persistent://orchestra/quality-mesh/chat-messages-raw || echo "Tópico RAW existente."
+              bin/pulsar-admin topics create persistent://orchestra/quality-mesh/data-contracts-dama || echo "Tópico DAMA existente."
+              bin/pulsar-admin topics create persistent://orchestra/quality-mesh/data-quality-metrics || echo "Tópico METRICS existente."
+              
+              echo "🟢 Aprovisionamiento completado con éxito."
+          resources:
+            limits:
+              cpu: "250m"
+              memory: "256Mi"

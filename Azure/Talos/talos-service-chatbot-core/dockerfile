@@ -1,0 +1,24 @@
+# ===========================================================================
+# 🏢 ORCHESTRA LABS: DOCKERFILE INDUSTRIAL PARA TALOS CHATBOT CORE (PYTHON)
+# ===========================================================================
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Instalamos las librerías oficiales dentro del entorno limpio del contenedor
+RUN pip install --no-cache-dir fastapi uvicorn pulsar-client pyjwt httpx pydantic
+
+COPY src/ ./src
+COPY run_core.py .
+
+EXPOSE 3000
+
+# Fijamos el contexto de rutas para que los 4 workers no sufran Spawn errors
+ENV PYTHONPATH=/app:/app/src
+
+CMD ["python", "run_core.py"]

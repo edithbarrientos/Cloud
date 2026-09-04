@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package com.orchestra.ado.models;
+
+/**
+ * 🪐 CONTRATO ENRIQUECIDO DE PROCESAMIENTO EN STREAMING (PROTOBUF V3)
+ * Define el esquema binario rígido unificado para auditorías de soporte,
+ * linaje de datos y análisis lingüístico multicliente de alta velocidad.
+ */
+message ChatAnomaly {
+  // Identificadores de Contexto de Negocio
+  string tenant_id = 1;
+  string client_id = 2;
+  string customer_id = 3;
+  string session_id = 4;
+  
+  // Metadatos de Trazabilidad e Idempotencia
+  string message_id = 5;
+  string timestamp = 6;
+  string source = 7;
+  
+  // Cargas Útiles Lingüísticas y Análisis
+  string message = 8;
+  string raw_message = 9;
+  string issue_category = 10;
+  string summary = 11;
+  string attachment = 12;
+}

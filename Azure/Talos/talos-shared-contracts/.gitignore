@@ -1,0 +1,47 @@
+# ==========================================
+# REPOSITORIOS / PROYECTOS EXCLUIDOS
+# ==========================================
+ChronosDB/
+super_engine_workspace/
+target/
+
+# ==========================================
+# NODE & JAVASCRIPT (Bloqueo absoluto)
+# ==========================================
+node_modules/
+.npm/
+package-lock.json
+
+# ==========================================
+# PYTHON (Entornos virtuales y Caché)
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# ==========================================
+# AZURE & DATA SCIENCE
+# ==========================================
+.azure/
+.azure-functions/
+.serverless/
+*.log
+*.csv
+*.xlsx
+*.json
+!manifest.json
+
+# ==========================================
+# EDITORES Y SISTEMA
+# ==========================================
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.env
+.env.local

@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "helm-ai-engine.fullname" . }}-deployment
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "helm-ai-engine.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "helm-ai-engine.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "helm-ai-engine.selectorLabels" . | nindent 8 }}
+        tier: api-grpc
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      
+      # 🏎️ TUNING DEL KERNEL POR VARIABLE
+      initContainers:
+      - name: init-sysctl
+        image: busybox:1.36
+        command: ["sysctl", "-w", "net.core.somaxconn=32768", "net.ipv4.tcp_tw_reuse=1"]
+        securityContext:
+          privileged: true
+          runAsUser: 0
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ include "helm-ai-engine.name" . }}
+              topologyKey: kubernetes.io/hostname
+
+      containers:
+      - name: deequ-core-container
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: 50051
+          name: grpc-port
+          protocol: TCP
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 10 }}
+        
+        env:
+        - name: ACTIVE_CLOUD_PROVIDER
+          value: {{ .Values.env.activeCloudProvider | quote }}
+        - name: REDIS_HOST
+          value: {{ .Values.env.redisHost | quote }}
+        - name: REDIS_PORT
+          value: {{ .Values.env.redisPort | quote }}
+        # 🛡️ INYECCIÓN DE METADATOS NO-SQL DESDE SECRETOS SEGUROS
+        - name: NOSQL_DB_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "helm-ai-engine.fullname" . }}-secrets
+              key: noSqlConnectionString
+        
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 15"]
+
+        readinessProbe:
+          grpc:
+            port: 50051
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        livenessProbe:
+          grpc:
+            port: 50051
+          initialDelaySeconds: 5
+          periodSeconds: 10

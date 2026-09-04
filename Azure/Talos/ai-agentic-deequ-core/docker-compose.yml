@@ -1,0 +1,79 @@
+# -*- coding: utf-8 -*-
+# ======================================================================================================================
+# PROJECT: Autonomous Deequ Orchestrator (ADO) - Enterprise Cognitive Engine
+# MODULE: System Infrastructure Local Despliegue (Microservice Isolated Link)
+# FILE: docker-compose.yml
+# AUTHOR: Orchestra Labs Enterprise Architecture
+# VERSION: 9.1.0
+# COMPATIBILITY: Docker Compose v2+ / Colima Engine Container Setup (Secure Isolated Mesh)
+# ======================================================================================================================
+
+
+services:
+  # CAPA 1: BRÓKER REDIS IN-MEMORY WITH SUPPORT HNSW (Caché de Inferencia de Agentes)
+  redis-broker:
+    image: "redis:7.2-alpine"
+    container_name: redis-broker
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-orchestra-secret-token}
+    ports:
+      - "127.0.0.1:6379:6379"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+    networks:
+      - orchestra-mesh
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      # 🚀 CORRECCIÓN DE SINTAXIS: Cadena de comandos nativa plana compatible con go-yaml parser sin romper arrays
+      test: redis-cli -a ${REDIS_PASSWORD:-orchestra-secret-token} ping || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # COMPONENTE CORE AISLADO: AI REASONING ENGINE (Inferencia Agéntica Pura / Puerto 8001)
+  ai-agentic-deequ-core:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    container_name: ai-agentic-deequ-core
+    image: orchestra-labs-deequ-core:latest
+    ports:
+      - "127.0.0.1:8001:8001"
+    environment:
+      - REDIS_HOST=redis-broker
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-orchestra-secret-token}
+      - LOG_LEVEL=INFO
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+    networks:
+      - orchestra-mesh
+    restart: always
+    volumes:
+      - eagle-trail:/app/data
+    depends_on:
+      redis-broker:
+        condition: service_healthy
+    healthcheck:
+      test: curl -f http://127.0.0 || exit 1
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+networks:
+  # 🌐 RED FEDERADA EXTERNA: Enlace agnóstico compartido con la pasarela gateway-api
+  orchestra-mesh:
+    name: orchestra-mesh
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local
+  eagle-trail:
+    driver: local

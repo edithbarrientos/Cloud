@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-deequ-custom-api-service
+  namespace: ai-deequ
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8082
+    targetPort: 8082
+  selector:
+    app: ai-deequ-custom-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-deequ-custom-api
+  namespace: ai-deequ
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ai-deequ-custom-api
+  template:
+    metadata:
+      labels:
+        app: ai-deequ-custom-api
+    spec:
+      containers:
+      - name: custom-api
+        image: apachepulsar/pulsar:2.11.0
+        command: ["python3", "-u", "-c"]
+        args:
+        - |
+          import http.server
+          import sys
+
+          class CustomAPIHandler(http.server.BaseHTTPRequestHandler):
+              def do_GET(self):
+                  self.send_response(200)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  self.wfile.write(b'{"status":"ONLINE"}')
+                  print("📥 [CUSTOM API] Test de salud (GET) recibido exitosamente", flush=True)
+
+              def do_POST(self):
+                  content_length = int(self.headers.get('Content-Length', 0))
+                  body = self.rfile.read(content_length).decode('utf-8')
+                  print(f"📥 [CUSTOM API LOG EN VIVO] Evento recibido: {body}", flush=True)
+                  self.send_response(200)
+                  self.send_header('Content-Type', 'application/json')
+                  self.end_headers()
+                  self.wfile.write(b'{"status":"PROCESSED"}')
+
+              def log_message(self, format, *args):
+                  return
+
+          print("🚀 Custom API Activa y escuchando en el puerto 8082", flush=True)
+          server = http.server.HTTPServer(('0.0.0.0', 8082), CustomAPIHandler)
+          server.serve_forever()
+        ports:
+        - containerPort: 8082
+          name: http
+        readinessProbe:
+          tcpSocket:
+            port: 8082
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        # 🚀 SOLUCIÓN A LA ADVERTENCIA: Límites fijos para evitar ruidos de vecinos (noisy neighbor)
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"

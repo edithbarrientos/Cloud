@@ -1,0 +1,16 @@
+apiVersion: v2
+name: ai-deequ-engine
+description: "Enterprise Umbrella Chart for Autonomous Data Quality Validation and Reactive Chat Ingestion"
+type: application
+version: 1.0.0
+appVersion: "9.1.0"
+
+dependencies:
+  - name: pulsar
+    version: "4.7.0"
+    repository: "https://apache.org"
+    condition: pulsar.enabled
+  - name: redis
+    version: "19.6.2"
+    repository: "https://bitnami.com"
+    condition: redis.enabled

@@ -1,0 +1,61 @@
+# ======================================================================================================================
+# ETAPA 1: BUILD ENVIRONMENT (COMPILACIÓN OPTIMIZADA CON CACHÉ DE CAPAS)
+# ======================================================================================================================
+FROM sbtproject/sbt:1.9.7-alpine as builder
+
+WORKDIR /app
+
+# 🚀 MEJORA CACHÉ 1: Copiar únicamente manifiestos estructurales primarios
+COPY project/ /app/project/
+COPY build.sbt /app/
+
+# Forzar descarga y congelamiento de las librerías pesadas de internet en el caché de Docker
+RUN sbt update
+
+# 🚀 MEJORA CACHÉ 2: Copiar el código fuente solo después de haber congelado las dependencias
+COPY gateway-api/ /app/gateway-api/
+COPY core-models/ /app/core-models/
+
+# Ejecutar la compilación del Fat JAR inmutable omitiendo las pruebas unitarias
+RUN sbt "project gatewayApi" assembly
+
+# ======================================================================================================================
+# ETAPA 2: RUNTIME ENTORNO DE PRODUCCIÓN INDUSTRIAL (SEGURIDAD Y RESILIENCIA)
+# ======================================================================================================================
+FROM eclipse-temurin:11-jre-alpine
+
+WORKDIR /opt/orchestra
+
+# 🚀 MEJORA RELOJ: Instalar zona horaria para acoplar los logs en tiempo real con tu Mac
+RUN apk add --no-cache tzdata
+ENV TZ=America/Mexico_City
+
+# Configuración estricta de Gobernanza de Seguridad no raíz
+RUN addgroup -g 10001 orchestra && \
+    adduser -D -u 10001 -G orchestra orchestra
+
+# 🚀 CORRECCIÓN DE RUTA DE SBT-ASSEMBLY:
+# Extraemos el artefacto binario puro desde la ubicación real unificada de salida de tu repositorio
+COPY --from=builder /app/target/artifacts/gateway-api.jar /opt/orchestra/gateway-api.jar
+
+# Asegurar los privilegios de lectura al usuario de ejecución asíncrona
+RUN chown -R orchestra:orchestra /opt/orchestra
+
+# Forzar la ejecución bajo el contexto seguro no root de Kubernetes
+USER 10001
+
+# Puerto multiplexado gRPC / HTTP2 binario expuesto en la red
+EXPOSE 50051
+
+# 🚀 MEJORA JVM: Inyección de soporte nativo para contenedores y control dinámico del Heap
+ENTRYPOINT [ \
+  "java", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-Xms512m", \
+  "-XX:+UseG1GC", \
+  "-XX:+ExitOnOutOfMemoryError", \
+  "-XX:+CrashOnOutOfMemoryError", \
+  "-jar", \
+  "/opt/orchestra/gateway-api.jar" \
+]

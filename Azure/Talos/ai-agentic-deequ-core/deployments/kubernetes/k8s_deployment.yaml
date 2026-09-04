@@ -1,0 +1,186 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-agentic-deequ-core-deployment
+  namespace: data-mesh-governance
+  labels:
+    app: ai-agentic-deequ-core
+    tier: api-grpc
+    dataProduct: governance-engine
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: ai-agentic-deequ-core
+  template:
+    metadata:
+      labels:
+        app: ai-agentic-deequ-core
+        tier: api-grpc
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+
+      initContainers:
+      - name: init-sysctl
+        image: busybox:1.36
+        command:
+        - sysctl
+        - -w
+        - net.core.somaxconn=32768
+        - net.ipv4.tcp_tw_reuse=1
+        securityContext:
+          privileged: true
+          runAsUser: 0
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - ai-agentic-deequ-core
+              topologyKey: kubernetes.io/hostname
+
+      containers:
+      - name: deequ-core-container
+        image: acrtalosregistry.azurecr.io/ai-agentic-deequ-core:v1.4.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 50051
+          name: grpc-port
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+        env:
+        - name: ACTIVE_CLOUD_PROVIDER
+          value: "azure"
+        - name: REDIS_HOST
+          value: "redis-cache-service.data-mesh-governance.svc.cluster.local"
+        - name: REDIS_PORT
+          value: "6379"
+        
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "64Mi"
+          limits:
+            cpu: "1000m"
+            memory: "128Mi"
+
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 15"]
+
+        readinessProbe:
+          grpc:
+            port: 50051
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        livenessProbe:
+          grpc:
+            port: 50051
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-agentic-deequ-core-service
+  namespace: data-mesh-governance
+spec:
+  type: ClusterIP
+  ports:
+  - port: 50051
+    targetPort: grpc-port
+    name: grpc
+    protocol: TCP
+  selector:
+    app: ai-agentic-deequ-core
+---
+# 📈 AUTO-ESCALADO: Modificado para apuntar al Deployment primario controlado por GitOps
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ai-agentic-deequ-core-hpa
+  namespace: data-mesh-governance
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-agentic-deequ-core-deployment-primary
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 75
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ai-agentic-deequ-core-pdb
+  namespace: data-mesh-governance
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: ai-agentic-deequ-core
+---
+# 🪄 PROGRESSIVE_DELIVERY_SPEC: Orquestador Canary automatizado basado en metricas (Flagger CRD)
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: ai-agentic-deequ-core-canary
+  namespace: data-mesh-governance
+spec:
+  # Referencia al Deployment base que acabamos de declarar arriba
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ai-agentic-deequ-core-deployment
+  # Referencia al Service encargado de multiplexar los stubs de red
+  service:
+    port: 50051
+    targetPort: grpc-port
+    name: ai-agentic-deequ-core-service
+  analysis:
+    # Intervalo de tiempo para interrogar las metricas en Prometheus
+    interval: 10s
+    # Numero maximo de fallas toleradas antes de gatillar el Rollback automatico
+    threshold: 5
+    # Incremento porcentual fino del trafico gRPC en la malla de red
+    maxWeight: 50
+    stepWeight: 10
+    metrics:
+    # Metrica 1: Validar que el estatus global gRPC de la malla no truene
+    - name: request-success-rate
+      thresholdRange:
+        min: 99.0
+      interval: 1m
+    # Metrica 2: Monitorear que la latencia pura de C++ no cruce el umbral critico perimetral
+    - name: "deequ_core_inference_latency_microseconds"
+      templateRef:
+        name: grpc-latency-template
+      thresholdRange:
+        max: 50000 # 50 mil microsegundos maximo tolerados (50ms SLA boundary)
+      interval: 30s

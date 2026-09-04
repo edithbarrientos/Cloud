@@ -1,0 +1,104 @@
+# ========================================================================================================================
+# MANIFIESTO DE ORQUESTRACIÓN DISTRIBUIDA GENERAL (ENTERPRISE MASTER CONFIGURATION)
+# Monorepo Unificado: Capa de Ingesta Autónoma, Procesamiento en Streaming Parallel y Clasificación por IA.
+# Módulos Conectados e Inter-Mesh: ai-nlp-engine + ai-deequ-engine (Sincronización Nativa por Healthchecks)
+# ========================================================================================================================
+
+networks:
+  ai-nlp-network:
+    name: ai_nlp_net
+    driver: bridge # Red de aislamiento tipo puente para habilitar la resolución DNS interna Layer 3 (Intramesh)
+
+services:
+
+  # ======================================================================================================================
+  # 🧠 SERVICIO 1 - COMPONENTE IA: nlp-brain-engine (FASTAPI / GUNICORN / PYTHON 3.12)
+  # ======================================================================================================================
+  nlp-brain-engine:
+    build:
+      context: ./nlp-ml-brain
+      dockerfile: Dockerfile # Construcción basada en el patrón Multi-Stage optimizado (1 Worker Elástico)
+    container_name: nlp-brain-engine
+    networks:
+      - ai-nlp-network
+    ports:
+      - "8000:8000" # Mapeo de puerto hacia el Host para triggers síncronos y auditoría externa
+    environment:
+      APP_ENV: "development"
+      DEFAULT_NLP_MODEL: "es_core_news_sm" # Modelo lingüístico base configurado como Fallback resiliente
+      INTENT_CONFIDENCE_THRESHOLD: "0.60" # Umbral estadístico mínimo para la discriminación de intenciones
+      PYTHONPATH: "/app" # Fuerza a la VM de Python a resolver las importaciones partiendo de la raíz del código
+    volumes:
+      - ./nlp-ml-brain/src:/app/src
+      - ./nlp-ml-brain/models_store:/app/models_store
+    # 🚀 PRODUCCIÓN LOCAL ROBUSTA: Se elimina --reload para mitigar ciclados infinitos de hilos en el sistema virtual
+    command: >
+      bash -c "python3 -m spacy download es_core_news_sm && uvicorn src.main:app --host 0.0.0.0 --port 8000"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0' # 2 núcleos estables para operaciones matriciales paralelas de spaCy
+          memory: 3072M # Cuota protegida de memoria RAM asignada al microservicio analítico
+        reservations:
+          memory: 1024M # Reserva base en memoria RAM requerida durante la secuencia de arranque (Lifespan Startup)
+
+  # ======================================================================================================================
+  # 🦫 SERVICIO 2 - COMPONENTE STREAMING MASTER: flink-jobmanager (CON MONITOR DE SALUD INTEGRADO)
+  # ======================================================================================================================
+  flink-jobmanager:
+    image: flink:1.18.1-java11
+    container_name: flink-jobmanager
+    networks:
+      - ai-nlp-network
+    ports:
+      - "8081:8081" # Puerto expuesto para la interfaz interactiva del Flink Web Dashboard UI
+    command: "jobmanager"
+    environment:
+      # 🛡️ COLCHÓN ELÁSTICO ASEGURADO: Bloque multilínea con los 4 espacios de sangría requeridos para las propiedades Pekko
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        pekko.ask.timeout: 60s
+        pekko.lookup.timeout: 60s
+    volumes:
+      - ./target/artifacts:/tmp/artifacts
+      - ./flink-runtime/src/main/resources:/tmp/resources
+    
+    # 🚀 VALIDADOR DE SALUD NATIVO (HEALTHCHECK)
+    # Monitorea el puerto web interno de Flink. No se declarará "Sano" hasta que la JVM responda exitosamente.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/v1/overview"]
+      interval: 4s      # Ejecuta la prueba cada 4 segundos en frío
+      timeout: 3s       # Límite de espera de respuesta del socket
+      retries: 5        # Le da hasta 5 oportunidades antes de marcar fallo
+      start_period: 10s # Ventana de gracia inicial para permitir que Java cargue en Colima
+
+  # ======================================================================================================================
+  # 🦫 SERVICIO 3 - COMPONENTE STREAMING WORKER: flink-taskmanager (DEPENDENCO AUTOMATIZADO)
+  # ======================================================================================================================
+  flink-taskmanager:
+    image: flink:1.18.1-java11
+    container_name: flink-taskmanager
+    networks:
+      - ai-nlp-network
+    command: taskmanager -Dtaskmanager.numberOfTaskSlots=2 # Paralelismo expandido a 2 slots de procesamiento
+    ports:
+      - "9999:9999" # Abre el canal de red TCP para recibir ráfagas directo desde tu Mac sin usar nc
+    environment:
+      # 🛡️ UNIFICACIÓN DE INFRAESTRUCTURA CORREGIDA: Sincroniza las propiedades de red con la sangría válida del maestro
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: flink-jobmanager
+        pekko.ask.timeout: 60s
+        pekko.lookup.timeout: 60s
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    
+    # 🚀 CONTROLADOR DE ESCALONAMIENTO INTELIGENTE
+    # Detiene el arranque del TaskManager hasta que el JobManager reporte el estado "healthy" (completamente sano y listo)
+    depends_on:
+      flink-jobmanager:
+        condition: service_healthy

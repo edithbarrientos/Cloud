@@ -1,0 +1,23 @@
+# ==========================================
+# EXCLUSIONES GLOBALES DIRECTAS
+# ==========================================
+node_modules/
+**/node_modules/
+venv/
+**/venv/
+.venv/
+**/ .venv/
+__pycache__/
+**/__pycache__/
+ChronosDB/
+**/ChronosDB/
+
+# ==========================================
+# CONFIGURACIONES Y ARCHIVOS TEMPORALES
+# ==========================================
+.azure/
+.azure-functions/
+.vscode/
+.idea/
+.DS_Store
+*.log

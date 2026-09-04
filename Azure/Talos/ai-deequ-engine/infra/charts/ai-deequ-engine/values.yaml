@@ -1,0 +1,69 @@
+# CONFIGURACIÓN GLOBAL DE DEPENDENCIAS EXTERNAS
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: true
+    password: "orchestra-secret-token"
+  master:
+    persistence:
+      enabled: false
+    resources:
+      limits:
+        cpu: "250m"
+        memory: "256Mi"
+
+pulsar:
+  enabled: true
+  volumes:
+    persistence: false
+  zookeeper:
+    replicaCount: 3
+    resources:
+      limits:
+        cpu: "250m"
+        memory: "256Mi"
+  bookkeeper:
+    replicaCount: 3 
+    resources:
+      limits:
+        cpu: "250m"
+        memory: "400Mi"
+  broker:
+    replicaCount: 3 
+    resources:
+      limits:
+        cpu: "250m"
+        memory: "400Mi"
+    configData:
+      ttlDurationDefaultInSeconds: "3600"
+  proxy:
+    replicaCount: 1
+    resources:
+      limits:
+        cpu: "250m"
+        memory: "256Mi"
+
+# MÓDULO 2: CONTROL PLANE PERIMETRAL
+gatewayApi:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ai-deequ-orchestrator-gateway-api
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 50051
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+
+# CONFIGURACIÓN DE SPARK PARA EL LINTER
+sparkCluster:
+  worker:
+    replicas: 2
+    resources:
+      limits:
+        cpu: "500m"
+        memory: "512Mi"

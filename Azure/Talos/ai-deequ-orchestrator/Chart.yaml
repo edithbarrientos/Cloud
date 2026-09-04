@@ -1,0 +1,12 @@
+apiVersion: v2
+name: ai-deequ-orchestrator
+description: "Enterprise Cognitive Engine for Autonomous Deequ Quality Orchestration"
+type: application
+version: 1.0.0
+appVersion: "9.1.0"
+
+dependencies:
+  - name: redis
+    version: "19.6.2"
+    repository: "https://bitnami.com"
+    condition: redis.enabled

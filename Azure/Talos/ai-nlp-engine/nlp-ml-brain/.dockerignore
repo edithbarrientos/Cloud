@@ -1,0 +1,18 @@
+# 🪐 EXCLUSIONES RÍGIDAS DE CONSTRUCCIÓN DE INFRAESTRUCTURA DE IA
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv
+ENV/
+.env
+.git
+.gitignore
+.github
+.pytest_cache
+.vscode
+.idea
+tests/

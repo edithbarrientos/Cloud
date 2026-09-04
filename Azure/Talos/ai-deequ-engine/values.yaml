@@ -1,0 +1,71 @@
+# ======================================================================================================================
+# CONFIGURACIÓN DEL INFRASTRUCTURE LAYER - MOTOR DE INGESTA DE CHAT (PERFIL MINIMO EMPRESARIAL: 3 NODOS)
+# ======================================================================================================================
+
+# CONFIGURACIÓN GLOBAL DE DEPENDENCIAS EXTERNAS
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: true
+    password: "orchestra-secret-token"
+  master:
+    persistence:
+      enabled: false  # Volátil para mitigar consumo de disco en la Mac
+    resources:
+      limits:
+        cpu: "250m"
+        memory: "256Mi"
+
+# CONFIGURACIÓN DE APACHE PULSAR CON ALTA DISPONIBILIDAD ESTRICTA (3 NODOS MÍNIMOS)
+pulsar:
+  enabled: true
+  volumes:
+    persistence: false # Deshabilitar PVCs persistentes pesados para pruebas volátiles
+  
+  zookeeper:
+    replicaCount: 3 # 3 Nodos obligatorios para quórum de consenso distributed
+    resources:
+      limits:
+        cpu: "250m"
+        memory: "256Mi"
+  
+  # 3 Nodos de almacenamiento (Quórum de escritura de mensajes de chat)
+  bookkeeper:
+    replicaCount: 3 
+    resources:
+      limits:
+        cpu: "250m"
+        memory: "400Mi"
+  
+  # 3 Nodos de procesamiento y balanceo de ráfagas
+  broker:
+    replicaCount: 3 
+    resources:
+      limits:
+        cpu: "250m"
+        memory: "400Mi"
+    configData:
+      ttlDurationDefaultInSeconds: "3600" # TTL Estricto de 1 Hora para el ciclo de vida del chat
+  
+  proxy:
+    replicaCount: 1
+    resources:
+      limits:
+        cpu: "250m"
+        memory: "256Mi"
+
+# MÓDULO 2: CONTROL PLANE PERIMETRAL (Akka HTTP gRPC Gateway - Receptor de Chats Puro)
+gatewayApi:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ai-deequ-orchestrator-gateway-api
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    port: 50051
+  resources:
+    limits:
+      cpu: "500m"       # Ligero: solo transfiere ráfagas binarias por gRPC
+      memory: "1Gi"      # Espacio controlado para la pila de la JVM de Akka

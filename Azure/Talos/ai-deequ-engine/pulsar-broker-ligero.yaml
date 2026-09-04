@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pulsar-standalone-broker
+  namespace: ai-deequ
+  labels:
+    app: pulsar-standalone
+spec:
+  containers:
+  - name: pulsar
+    image: apachepulsar/pulsar:2.11.0
+    command: ["bin/pulsar", "standalone"]
+    env:
+    # 🚀 BLINDAJE DE MEMORIA CRÍTICO: Limitamos el Heap de la JVM interna para evitar el OOMKilled
+    - name: PULSAR_MEM
+      value: "-Xms256m -Xmx512m -XX:MaxDirectMemorySize=256m"
+    # Auto-creación elástica de tópicos persistentes activa
+    - name: PULSAR_PREFIX_allowAutoTopicCreation
+      value: "true"
+    - name: PULSAR_PREFIX_allowAutoTopicCreationType
+      value: "partitioned"
+    - name: PULSAR_PREFIX_defaultNumPartitions
+      value: "1"
+    ports:
+    - containerPort: 6650
+      name: binary
+    - containerPort: 8080
+      name: http
+    resources:
+      limits:
+        cpu: "1"
+        memory: "2Gi" # Dejamos el límite elástico alto en Kubernetes, pero la JVM respetará los 512MB
+      requests:
+        cpu: "500m"
+        memory: "1Gi"

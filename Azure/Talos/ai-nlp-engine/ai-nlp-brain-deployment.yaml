@@ -1,0 +1,58 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nlp-brain-engine-service
+  namespace: ai-deequ # Montado en tu mismo namespace unificado
+spec:
+  type: ClusterIP # Comunicación interna privada ultra-rápida de capa 3 CoreDNS
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+  selector:
+    app: nlp-brain-engine
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nlp-brain-engine
+  namespace: ai-deequ
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: nlp-brain-engine
+  template:
+    metadata:
+      labels:
+        app: nlp-brain-engine
+    spec:
+      containers:
+      - name: brain-engine
+        image: nlp-brain-engine:latest # K3s buscará la imagen en tu daemon local
+        
+        # 🚀 BLINDAJE DE INFRAESTRUCTURA: Ejecución estable sin --reload
+        command: ["python3"]
+        args: ["-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
+        
+        ports:
+        - containerPort: 8000
+          name: http
+        env:
+        - name: APP_ENV
+          value: "development"
+        - name: DEFAULT_NLP_MODEL
+          value: "es_core_news_sm"
+        - name: INTENT_CONFIDENCE_THRESHOLD
+          value: "0.60" # 🚀 CORREGIDO: Removido el dos puntos que causaba el Nested Mapping error
+        - name: PYTHONPATH
+          value: "/app"
+        resources:
+          limits:
+            cpu: "2000m"    # 2 Núcleos de CPU elásticos asignados por tu clúster
+            memory: "3Gi"   # 3GB de RAM protegidos para el cálculo de matrices de spaCy
+          requests:
+            cpu: "1000m"
+            memory: "1Gi"

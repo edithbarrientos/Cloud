@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-deequ-gateway-api-service
+  namespace: ai-deequ
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 50051
+    targetPort: 50051
+  selector:
+    app: ai-deequ-gateway-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-deequ-gateway-api
+  namespace: ai-deequ
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ai-deequ-gateway-api
+  template:
+    metadata:
+      labels:
+        app: ai-deequ-gateway-api
+    spec:
+      containers:
+      - name: gateway-api
+        image: alpine:3.18
+        command: ["sh", "-c"]
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+        ports:
+        - containerPort: 50051
+          name: http
+        args:
+        - |
+          apk add --no-cache python3 curl
+          python3 -u -c '
+          import http.server, json, subprocess, time, struct, base64
+
+          class ProtobufGatewayHandler(http.server.BaseHTTPRequestHandler):
+              def do_POST(self):
+                  content_length = int(self.headers.get("Content-Length", 0))
+                  body = json.loads(self.rfile.read(content_length).decode("utf-8"))
+                  
+                  tenant_id = self.headers.get("X-Tenant-ID", "orchestra-default").encode("utf-8")
+                  session_id = b"sess-999"
+                  payload = body.get("payload", "").encode("utf-8")
+                  timestamp = int(time.time() * 1000)
+
+                  serialized_bytes = bytearray()
+                  serialized_bytes.extend(struct.pack("B", 10) + struct.pack("B", len(tenant_id)) + tenant_id)
+                  serialized_bytes.extend(struct.pack("B", 18) + struct.pack("B", len(session_id)) + session_id)
+                  serialized_bytes.extend(struct.pack("B", 26) + struct.pack("B", len(payload)) + payload)
+                  serialized_bytes.extend(struct.pack("B", 32) + struct.pack("<Q", timestamp)[:6])
+
+                  b64_payload = base64.b64encode(serialized_bytes).decode("utf-8")
+                  print("📥 [GATEWAY-REST] Mensaje Base64 enviado vía REST.", flush=True)
+
+                  cmd = f"curl -s -X POST \"http://pulsar-standalone-broker:8080/topics/persistent/public/default/chat-messages-raw/v2\" -H \"Content-Type: application/octet-stream\" -d \"{b64_payload}\" > /dev/null 2>&1 &"
+                  subprocess.run(cmd, shell=True)
+
+                  self.send_response(200)
+                  self.send_header("Content-Type", "application/json")
+                  self.end_headers()
+                  self.wfile.write(b"{\"status\":\"ACCEPTED_PROTOBUF\"}")
+
+          print("🚀 API Gateway REST-Protobuf ultra ligero activo en puerto 50051", flush=True)
+          server = http.server.HTTPServer(("0.0.0.0", 50051), ProtobufGatewayHandler)
+          server.serve_forever()
+          '

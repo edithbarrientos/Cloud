@@ -1,0 +1,21 @@
+# ======================================================================================================================
+# ETAPA DE COMPILACIÓN INDUSTRIAL: AGENTE DE STREAMING ELÁSTICO
+# ======================================================================================================================
+FROM sbtproject/sbt:1.9.7-alpine as builder
+
+WORKDIR /app
+
+# Congelamiento de las librerías pesadas de Flink y Pulsar en caché
+COPY project/ /app/project/
+COPY build.sbt /app/
+RUN sbt update
+
+# Copiar el código del procesador de eventos distribuidos
+COPY flink-runtime/ /app/flink-runtime/
+COPY core-models/ /app/core-models/
+
+# Forzar el ensamble del pasatubos elástico e inmutable
+RUN sbt "project flinkRuntime" assembly
+
+# Copiamos el archivo final a una ruta limpia para su extracción externa por volumen o sidecar
+ENTRYPOINT ["cp", "/app/target/artifacts/flink-stream-agent.jar", "/opt/artifacts/flink-stream-agent.jar"]

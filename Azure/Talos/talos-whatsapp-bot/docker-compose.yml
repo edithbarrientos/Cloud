@@ -1,0 +1,79 @@
+services:
+  # ===========================================================================
+  # COMPONENTE 1: BRÓKER REDIS IN-MEMORY
+  # ===========================================================================
+  redis-broker:
+    image: "redis:7.2-alpine"
+    container_name: redis-broker
+    command: redis-server --appendonly yes --requirepass orchestra-secret-token
+    ports:
+      - "6379:6379"
+    networks:
+      - orchestra-mesh-isolated
+
+  # ===========================================================================
+  # COMPONENTE 2: Apache Pulsar Standalone
+  # ===========================================================================
+  apache-pulsar:
+    image: apachepulsar/pulsar:3.0.0
+    container_name: pulsar-service
+    command: bin/pulsar standalone --no-functions-worker --no-stream-storage
+    ports:
+      - "6650:6650"
+      - "8080:8080"
+    environment:
+      - PULSAR_MEM=-Xms256m -Xmx512m -XX:MaxDirectMemorySize=512m
+      # ⚡ RESOLUCIÓN DNS: Forzamos el registro usando el nombre del servicio como dominio lógico
+      - PULSAR_PREFIX_advertisedAddress=pulsar-service
+      - PULSAR_PREFIX_allowAutoTopicCreation=true
+      - PULSAR_PREFIX_allowAutoTopicCreationType=non-partitioned
+    networks:
+      - orchestra-mesh-isolated
+
+  # ===========================================================================
+  # COMPONENTE 3: Motor Analítico Reactivo (Apache Flink con Sockets gRPC)
+  # ===========================================================================
+  flink-stream-agent:
+    image: orchestra/ado-stream-agent:1.0.0
+    container_name: flink-headless-service
+    entrypoint: ["/bin/sh", "-c", "sleep 15 && exec /entrypoint.sh"]
+    ports:
+      - "50051:50051"
+    environment:
+      - FLINK_COMPONENT_NAME=ELITE_CONCURRENT_STREAM_AGENT
+      # ⚡ RESOLUCIÓN DNS: Flink localiza a Pulsar a través del puente usando su alias lógico
+      - PULSAR_SERVICE_URL=pulsar://pulsar-service:6650
+      - PULSAR_ADMIN_URL=http://pulsar-service:8080
+      - PULSAR_TOPIC=persistent://public/default/evh-whatsapp-fraud-audits
+    networks:
+      - orchestra-mesh-isolated
+    depends_on:
+      - apache-pulsar
+
+  # ===========================================================================
+  # COMPONENTE 4: Pasarela de Entrada (FastAPI + Granian Rust Engine)
+  # ===========================================================================
+  gateway-api:
+    build:
+      context: .
+      dockerfile: gateway-api/Dockerfile.gateway
+    container_name: gateway-service
+    image: orchestra/gateway-api-slim:4.0.0
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis-broker
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=orchestra-secret-token
+      - PULSAR_BROKER_URL=pulsar://pulsar-service:6650
+      - AI_REASONING_ENGINE_URL=http://gateway-service:8000/api/v1/ingest
+      - FLINK_GRPC_TARGET=flink-headless-service:50051
+    networks:
+      - orchestra-mesh-isolated
+    depends_on:
+      - flink-stream-agent
+
+# ⚡ CONEXIÓN DE PUENTE EXTERNO INMUTABLE POR CONSOLA
+networks:
+  orchestra-mesh-isolated:
+    external: true

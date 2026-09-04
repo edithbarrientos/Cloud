@@ -1,0 +1,196 @@
+# =============================================================================
+# 🏛️ ESQUEMA DEL TÓPICO UNIFICADO (VALORES DECLARATIVOS BAJO LA COMPOSE SPEC)
+# =============================================================================
+x-pulsar-topic-spec:
+  apiVersion: pulsar.streamnative.io/v1alpha1
+  kind: PulsarTopic
+  metadata:
+    name: evh-whatsapp-fraud-audits
+    namespace: pulsar
+  spec:
+    topicName: evh-whatsapp-fraud-audits
+    tenant: public
+    namespace: default
+    partitions: 0
+    retentionTime: "1h"
+    retentionSize: "100m"
+    schema:
+      type: AVRO
+      schema: >
+        {
+          "type": "record",
+          "name": "DataIngestRequest",
+          "namespace": "orchestra.labs.dama",
+          "fields": [
+            {"name": "kpi_target", "type": "string"},
+            {
+              "name": "data",
+              "type": {
+                "type": "record",
+                "name": "PayloadData",
+                "fields": [
+                  {"name": "id", "type": "string"},
+                  {"name": "user", "type": "string"},
+                  {"name": "status", "type": "string"},
+                  {"name": "raw_prompt", "type": "string"}
+                ]
+              }
+            },
+            {
+              "name": "metadata",
+              "type": {
+                "type": "record",
+                "name": "PayloadMetadata",
+                "fields": [
+                  {"name": "schema_mutation", "type": "boolean"},
+                  {"name": "execution_mode", "type": "string"},
+                  {"name": "timestamp", "type": "double"}
+                ]
+              }
+            }
+          ]
+        }
+
+services:
+  # ===========================================================================
+  # COMPONENTE 1: BRÓKER REDIS IN-MEMORY (IP ESTÁTICA)
+  # ===========================================================================
+  redis-broker:
+    image: "redis:7.2-alpine"
+    container_name: redis-broker
+    command: redis-server --appendonly yes --requirepass orchestra-secret-token
+    ports:
+      - "6379:6379"
+    networks:
+      orchestra-mesh-isolated:
+        ipv4_address: 172.28.0.3
+
+  # ===========================================================================
+  # COMPONENTE 2: Apache Pulsar Standalone (IP ESTÁTICA)
+  # ===========================================================================
+  apache-pulsar:
+    image: apachepulsar/pulsar:3.0.0
+    container_name: pulsar-service
+    command: bin/pulsar standalone --no-functions-worker --no-stream-storage
+    ports:
+      - "8080:8080"
+      - "6650:6650"
+    environment:
+      - PULSAR_MEM=-Xms512m -Xmx512m -XX:MaxDirectMemorySize=1g
+      - PULSAR_PREFIX_advertisedAddress=pulsar-service
+      - PULSAR_PREFIX_allowAutoTopicCreation=true
+      - PULSAR_PREFIX_allowAutoTopicCreationType=non-partitioned
+    volumes:
+      - pulsar_data:/pulsar/data
+      - pulsar_metadata:/pulsar/data/zookeeper
+    networks:
+      orchestra-mesh-isolated:
+        ipv4_address: 172.28.0.2
+
+  # ===========================================================================
+  # COMPONENTE 3: INITIALIZER (APUNTANDO DIRECTO A LA IP FIJA DEL BUS)
+  # ===========================================================================
+  pulsar-init-infrastructure:
+    image: apachepulsar/pulsar:3.0.0
+    container_name: pulsar-init-service
+    networks:
+      orchestra-mesh-isolated:
+        ipv4_address: 172.28.0.6
+    depends_on:
+      - apache-pulsar
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "⏳ SRE: Esperando respuesta inicial del puerto HTTP administrativo 8080..."
+        while ! curl -s http://172.28.0 > /dev/null; do sleep 2; done
+        
+        echo "⚡ SRE: Puerto abierto. Esperando 15 segundos adicionales para la maduración de la JVM..."
+        sleep 15
+        
+        echo "🚀 Creando Namespace lógico..."
+        bin/pulsar-admin --admin-url http://172.28.0.2:8080 namespaces create public/default || echo "Namespace ya existía..."
+        
+        echo "🚀 Creando Tópico físico plano inmutable..."
+        bin/pulsar-admin --admin-url http://172.28.0.2:8080 topics create persistent://public/default/evh-whatsapp-fraud-audits || echo "Tópico ya existía..."
+        
+        echo "⏱️ Configurando Políticas de Retención desde la Spec (Esperando inicialización de la caché interna)..."
+        while ! bin/pulsar-admin --admin-url http://172.28.0.2:8080 topics set-retention --time 60 --size 100 persistent://public/default/evh-whatsapp-fraud-audits 2>/dev/null; do
+          echo "🔄 La caché de políticas de Java sigue inicializando. Reintentando en 3 segundos..."
+          sleep 3
+        done
+        echo "✅ Políticas de retención de 1 hora inyectadas con éxito."
+        
+        echo "🛡️ Inyectando el bloque de esquema AVRO del proyecto..."
+        cat << 'INNER_EOF' > /tmp/schema_payload.json
+        {
+          "type": "AVRO",
+          "schema": "{\"type\":\"record\",\"name\":\"DataIngestRequest\",\"namespace\":\"orchestra.labs.dama\",\"fields\":[{\"name\":\"kpi_target\",\"type\":\"string\"},{\"name\":\"data\",\"type\":{\"type\":\"record\",\"name\":\"PayloadData\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"user\",\"type\":\"string\"},{\"name\":\"status\",\"type\":\"string\"},{\"name\":\"raw_prompt\",\"type\":\"string\"}]}},{\"name\":\"metadata\",\"type\":{\"type\":\"record\",\"name\":\"PayloadMetadata\",\"fields\":[{\"name\":\"schema_mutation\",\"type\":\"boolean\"},{\"name\":\"execution_mode\",\"type\":\"string\"},{\"name\":\"timestamp\",\"type\":\"double\"}]}}]}",
+          "properties": {}
+        }
+        INNER_EOF
+        
+        bin/pulsar-admin --admin-url http://172.28.0.2:8080 schemas upload --filename /tmp/schema_payload.json persistent://public/default/evh-whatsapp-fraud-audits
+        echo "✅ [ÉXITO DE DATAOPS] Estructura jerárquica unificada, retención de 1 hora y esquema anclados al disco."
+    volumes:
+      - ./docker-compose.yml:/app/docker-compose.yml
+
+  # ===========================================================================
+  # COMPONENTE 4: EL AGENTE DE TRANSMISIÓN (IP FIJA INMUTABLE)
+  # ===========================================================================
+  flink-headless-service:
+    image: orchestra/ado-stream-agent:1.0.0
+    container_name: flink-headless-service
+    entrypoint: ["/bin/sh", "-c", "echo '⏳ SRE: Esperando estabilidad del bus analítico...' && sleep 45 && exec python /app/agent_stream.py"]
+    ports:
+      - "50051:50051"
+    environment:
+      - FLINK_COMPONENT_NAME=ELITE_CONCURRENT_STREAM_AGENT
+      - PULSAR_SERVICE_URL=pulsar://172.28.0.2:6650
+      - PULSAR_ADMIN_URL=http://172.28.0.2:8080
+      - PULSAR_TOPIC=persistent://public/default/evh-whatsapp-fraud-audits
+    volumes:
+      - .:/app
+    networks:
+      orchestra-mesh-isolated:
+        ipv4_address: 172.28.0.5
+    depends_on:
+      - apache-pulsar
+      - pulsar-init-infrastructure
+
+  # ===========================================================================
+  # COMPONENTE 5: PASARELA DE ENTRADA (CON LA CORRECCIÓN DE DOCKERFILE EN BUILD)
+  # ===========================================================================
+  gateway-api:
+    build:
+      context: .
+      # ⚡ FIJADO COMPOSITE: Cambiamos 'file' por 'dockerfile' para corregir la validación del daemon
+      dockerfile: gateway-api/Dockerfile.gateway
+    container_name: gateway-service
+    image: orchestra/gateway-api-slim:4.0.0
+    ports:
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=172.28.0.3
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=orchestra-secret-token
+      - PULSAR_BROKER_URL=pulsar://172.28.0.2:6650
+      - AI_REASONING_ENGINE_URL=http://172.28.0
+      - FLINK_GRPC_TARGET=172.28.0.5:50051
+    networks:
+      orchestra-mesh-isolated:
+        ipv4_address: 172.28.0.4
+    depends_on:
+      - flink-headless-service
+
+# Declaración formal de la subred del puente IPAM
+networks:
+  orchestra-mesh-isolated:
+    name: orchestra-mesh-isolated
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  pulsar_data:
+  pulsar_metadata:

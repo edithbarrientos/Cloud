@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- 🚀 FORMATO INDUSTRIAL: Estampa de tiempo local | Hilo de red | Nivel de Log | Clase -> Mensaje -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT" />
+    </root>
+
+    <!-- Silenciamos ruidos innecesarios de las librerías base de Akka -->
+    <logger name="akka" level="WARN" />
+</configuration>

@@ -1,0 +1,27 @@
+# ===========================================================================
+# ENTORNO DE DISTRIBUCIÓN CONTINUA EXACTLY-ONCE (FLINK STREAM PLANE)
+# ===========================================================================
+FROM flink:1.18.1-java11
+
+USER root
+
+# Actualizar el contenedor base e instalar utilerías de red analíticas
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Regresar al usuario oficial y seguro de Flink para el aislamiento del clúster
+USER flink
+
+WORKDIR /opt/flink
+
+# 🟢 RUTA MAESTRA JVM: Coloca el Fat JAR en usrlib/ para activar la carga automática del Job
+COPY target/artifacts/flink-stream-agent.jar /opt/flink/usrlib/flink-stream-agent.jar
+
+# Variables de entorno por defecto heredadas y coordinadas con Helm
+ENV FLINK_COMPONENT_NAME="ELITE_CONCURRENT_STREAM_AGENT"
+ENV FLINK_PARALLELISM=1
+
+# Comando nativo para desatar el pipeline continuo de Scala en modo aislado
+CMD ["standalone-job", "--job-classname", "com.orchestra.ado.stream.StreamApp"]

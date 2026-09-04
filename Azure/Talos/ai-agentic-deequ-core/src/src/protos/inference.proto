@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package inference;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+service InferenceEngine {
+  rpc ProcessInference (InferenceRequest) returns (InferenceResponse);
+  rpc StreamInference (stream InferenceRequest) returns (stream InferenceResponse);
+}
+
+message InferenceRequest {
+  string trace_id = 1;
+  int32 step_sequence = 2;
+  string previous_hash = 3;
+  google.protobuf.Struct metadata = 4;
+  
+  message MetricsPayload {
+    string sensor_id = 1;
+    double metric_value = 2;
+    string region = 3;
+  }
+  MetricsPayload telemetry = 5;
+}
+
+message SecurityIntegrity {
+  string current_hash = 1;
+  string expected_json_hash = 2;
+  string tenant_id = 3;
+  bool pii_veto_triggered = 4;
+  bool is_payload_mutated = 5;
+  google.protobuf.Timestamp compliance_checked_at = 6;
+  map<string, string> crypto_metadata = 7;
+}
+
+message DamaMetric {
+  enum Dimension {
+    UNKNOWN = 0;
+    EXACTITUD = 1;      
+    COMPLETO = 2;       
+    COHERENCIA = 3;     
+    FIABILIDAD = 4;     
+    PERTINENCIA = 5;    
+    OPORTUNIDAD = 6;    
+    UNICIDAD = 7;       
+    VALIDEZ = 8;        
+    INTEGRIDAD = 9;     
+    TRAZABILIDAD = 10;  
+  }
+  Dimension dimension = 1;
+  string status = 2;
+  double drift_score = 3;
+}
+
+message OrchestrationDetails {
+  string execution_status = 1;
+  string ledger_id = 2;
+  repeated DamaMetric dama_metrics = 3;
+}
+
+message InferenceResponse {
+  string trace_id = 1;
+  string status = 2;
+  SecurityIntegrity security_integrity = 3;
+  OrchestrationDetails orchestration_details = 4;
+}

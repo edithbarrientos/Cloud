@@ -1,0 +1,21 @@
+[tool.ruff]
+# Forzar la compatibilidad semántica con el entorno de ejecución de Python 3.12+
+target-version = "py312"
+
+# Margen extendido de tolerancia para descripciones y metadata corporativa sin romper legibilidad
+line-length = 150
+
+[tool.ruff.lint]
+# Reglas activas: E (Errores sintácticos), F (Pyflakes/Muerte lógica), W (Alertas PEP8), C90 (Mccabe), I (Orden de Imports)
+select = ["E", "F", "W", "C90", "I"]
+ignore = []
+
+[tool.ruff.lint.mccabe]
+# Patrón de Complejidad Ciclomática: Bloquea funciones con más de 10 bifurcaciones o caminos lógicos alternos
+max-complexity = 10
+
+[tool.pytest.ini_options]
+# Configuración del motor de pruebas automatizadas y cobertura analítica
+testpaths = ["tests"]
+addopts = "--cov=src --cov-report=term-missing --cov-report=html"
+asyncio_mode = "strict"

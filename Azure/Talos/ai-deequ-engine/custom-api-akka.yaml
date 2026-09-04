@@ -1,0 +1,121 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-deequ-custom-api-service
+  namespace: ai-deequ
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 8082
+    targetPort: 8082
+  selector:
+    app: ai-deequ-custom-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-deequ-custom-api
+  namespace: ai-deequ
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ai-deequ-custom-api
+  template:
+    metadata:
+      labels:
+        app: ai-deequ-custom-api
+    spec:
+      containers:
+      - name: custom-api
+        image: eclipse-temurin:11-jre-alpine
+        
+        # 🚀 ÚNICA CORRECCIÓN REQUERIDA: Forzamos la carga explícita de la nueva clase AkkaGatewayApp
+        command: ["java"]
+        args: ["-cp", "/app/custom-api.jar", "com.orchestra.ado.custom.AkkaGatewayApp"]
+        
+        ports:
+        - containerPort: 8082
+          name: http
+        env:
+        - name: TZ
+          value: "America/Mexico_City"
+        securityContext:
+          runAsUser: 0
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+        volumeMounts:
+        - name: local-artifacts
+          mountPath: /app
+      volumes:
+      - name: local-artifacts
+        hostPath:
+          path: /Users/edithbg/PoC/Cloud/Azure/Talos/ai-deequ-engine/target/artifacts
+          type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-deequ-gateway-api-service
+  namespace: ai-deequ
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 50051
+    targetPort: 50051
+  selector:
+    app: ai-deequ-gateway-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-deequ-gateway-api
+  namespace: ai-deequ
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: ai-deequ-gateway-api
+  template:
+    metadata:
+      labels:
+        app: ai-deequ-gateway-api
+    spec:
+      containers:
+      - name: gateway-api
+        image: eclipse-temurin:11-jre-alpine
+        command: ["java", "-jar", "/app/gateway-api.jar"]
+        ports:
+        - containerPort: 50051
+          name: http
+        env:
+        - name: TZ
+          value: "America/Mexico_City"
+        securityContext:
+          runAsUser: 0
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+        volumeMounts:
+        - name: local-artifacts
+          mountPath: /app
+      volumes:
+      - name: local-artifacts
+        hostPath:
+          path: /Users/edithbg/PoC/Cloud/Azure/Talos/ai-deequ-engine/target/artifacts
+          type: Directory

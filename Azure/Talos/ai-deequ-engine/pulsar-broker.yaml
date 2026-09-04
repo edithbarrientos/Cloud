@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pulsar-standalone-broker
+  namespace: ai-deequ
+  labels:
+    app: pulsar-broker
+spec:
+  containers:
+  - name: pulsar
+    image: apachepulsar/pulsar:2.11.0
+    command: ["sh", "-c"]
+    args: ["bin/pulsar standalone --no-functions-worker --no-stream-storage"]
+    ports:
+    - containerPort: 6650
+      name: broker
+    - containerPort: 8080
+      name: http

@@ -1,0 +1,27 @@
+# ===========================================================================
+# ENTORNO DE EJECUCIÓN GRADO ENTERPRISE PARA AKKA gRPC (JVM LIGERA)
+# ===========================================================================
+FROM eclipse-temurin:11-jre-focal
+
+USER root
+
+# Instalar utilerías esenciales de red y auditoría analítica
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl net-tools && \
+    rm -rf /var/lib/apt/lists/*
+
+# Establecer directorios de ejecución corporativos bajo el estándar DAMA
+WORKDIR /opt/talos/gateway
+
+# Copiar el Fat JAR reactivo unificado de Akka desde la ruta de compilación central
+COPY target/artifacts/gateway-api.jar /opt/talos/gateway/gateway-api.jar
+
+# Exponer el puerto binario gRPC multiplexado HTTP/2 coordinado con Helm
+EXPOSE 50051
+
+# Cambiar privilegios a un usuario no raíz para mitigación de riesgos de seguridad
+RUN chown -R 10001:10000 /opt/talos/gateway
+USER 10001:10000
+
+# Comando de arranque nativo de la Máquina Virtual de Java con tuning de memoria pasivo
+CMD ["java", "-Xms256m", "-Xmx512m", "-jar", "/opt/talos/gateway/gateway-api.jar"]

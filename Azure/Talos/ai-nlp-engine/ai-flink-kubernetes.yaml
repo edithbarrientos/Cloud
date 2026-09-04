@@ -1,0 +1,100 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: flink-jobmanager-service
+  namespace: ai-deequ
+spec:
+  type: ClusterIP
+  ports:
+  - name: rpc
+    port: 6123
+    targetPort: 6123
+  - name: web
+    port: 8081
+    targetPort: 8081
+  selector:
+    app: flink-jobmanager
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-jobmanager
+  namespace: ai-deequ
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: flink-jobmanager
+  template:
+    metadata:
+      labels:
+        app: flink-jobmanager
+    spec:
+      containers:
+      - name: jobmanager
+        image: ai-flink-app:latest
+        imagePullPolicy: Never
+        command: ["/docker-entrypoint.sh"]
+        args: ["standalone-job", "--class", "com.orchestra.ado.stream.StreamApp"]
+        ports:
+        - containerPort: 6123
+          name: rpc
+        - containerPort: 8081
+          name: web
+        env:
+        - name: FLINK_PROPERTIES
+          value: |
+            jobmanager.rpc.address: flink-jobmanager-service
+            pekko.ask.timeout: 60s
+            pekko.lookup.timeout: 60s
+        # 🚀 CORREGIDO: Límites para blindar al JobManager contra el pánico del "vecino ruidoso"
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: "1024Mi"
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flink-taskmanager
+  namespace: ai-deequ
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: flink-taskmanager
+  template:
+    metadata:
+      labels:
+        app: flink-taskmanager
+    spec:
+      containers:
+      - name: taskmanager
+        image: ai-flink-app:latest
+        imagePullPolicy: Never
+        command: ["/docker-entrypoint.sh"]
+        args: ["taskmanager", "-Dtaskmanager.numberOfTaskSlots=2"]
+        ports:
+        - containerPort: 9999
+          name: socket-input
+        env:
+        - name: FLINK_PROPERTIES
+          value: |
+            jobmanager.rpc.address: flink-jobmanager-service
+            pekko.ask.timeout: 60s
+            pekko.lookup.timeout: 60s
+        # 🚀 CORREGIDO: Inyección de la cuota mínima de arranque (requests) para evitar la inanición del slot
+        resources:
+          limits:
+            cpu: "1000m"
+            memory: "1024Mi"
+          requests:
+            cpu: "500m"
+            memory: "512Mi"

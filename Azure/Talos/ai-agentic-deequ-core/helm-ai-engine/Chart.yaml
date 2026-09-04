@@ -1,0 +1,7 @@
+apiVersion: v2
+name: helm-ai-engine
+description: Helm Chart corporativo hardened para el despliegue elástico de ai-agentic-deequ-core
+type: application
+version: 1.4.0
+appVersion: "1.4.0"
+icon: https://githubusercontent.com

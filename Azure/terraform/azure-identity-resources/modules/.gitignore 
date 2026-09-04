@@ -1,0 +1,25 @@
+# Autor: Susana Edith Brrientos Galicis <susana.edith.barrientos.galicia@gmail.com>
+# Proyecto: Infraestructura Terraform
+
+
+# Carpetas de datos locales de Terraform (contienen plugins y caché)
+.terraform/
+
+# Archivos de estado de Terraform (pueden contener datos sensibles y causan conflictos)
+*.tfstate
+*.tfstate.*
+
+# Archivos de variables (¡Evita subir contraseñas/secretos!)
+*.tfvars
+*.tfvars.json
+
+# Archivos de configuración de variables de entorno y secretos locales
+.envrc
+.env
+
+# Archivos de bloqueo de crashes o logs de ejecución
+crash.log
+*.log
+
+# Archivos de respaldo de editores de texto
+*.backup

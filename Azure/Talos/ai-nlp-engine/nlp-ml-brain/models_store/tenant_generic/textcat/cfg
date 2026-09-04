@@ -1,0 +1,9 @@
+{
+  "labels":[
+    "BILLING_SUPPORT",
+    "TECH_SUPPORT",
+    "GREETING"
+  ],
+  "threshold":0.0,
+  "positive_label":null
+}

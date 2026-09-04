@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ai-deequ-engine
+description: "Enterprise Chart for Autonomous Data Quality Validation and Reactive Chat Ingestion"
+type: application
+version: 1.0.0
+appVersion: "9.1.0"

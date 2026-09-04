@@ -1,0 +1,8 @@
+name: ai-agentic-deequ-core
+runtime:
+  name: python
+  options:
+    virtualenv: ../.venv  # 🚀 CORRECCIÓN: Fuerza a Pulumi a consumir los binarios y SDK instalados en tu caja aislada
+description: Enterprise Cognitive Engine - Multi-Tenant Reasoning Cluster IaC
+backend:
+  url: file://~/.pulumi

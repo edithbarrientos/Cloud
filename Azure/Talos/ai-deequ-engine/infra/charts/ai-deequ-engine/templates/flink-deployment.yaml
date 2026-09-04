@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-deequ-flink-jobmanager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: ai-deequ-flink
+    component: jobmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-deequ-flink
+      component: jobmanager
+  template:
+    metadata:
+      labels:
+        app: ai-deequ-flink
+        component: jobmanager
+    spec:
+      containers:
+        - name: jobmanager
+          image: "ai-deequ-orchestrator-flink-stream-agent:latest"
+          imagePullPolicy: IfNotPresent
+          command: ["/opt/flink/bin/jobmanager.sh"]
+          args: ["start-foreground", "cluster"]
+          ports:
+            - containerPort: 6123
+              name: rpc
+            - containerPort: 8081
+              name: webui
+          # 🚀 CORRECCIÓN: 'env' en lugar de 'environment'
+          env:
+            - name: FLINK_PROPERTIES
+              value: |
+                jobmanager.rpc.address: ai-deequ-flink-jobmanager
+                jobmanager.memory.process.size: 1024m
+                parallelism.default: 1
+                state.backend: filesystem
+                state.checkpoints.dir: file:///opt/flink/checkpoints
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /overview
+              port: 8081
+            initialDelaySeconds: 30
+            periodSeconds: 15
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-deequ-flink-taskmanager
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: ai-deequ-flink
+    component: taskmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-deequ-flink
+      component: taskmanager
+  template:
+    metadata:
+      labels:
+        app: ai-deequ-flink
+        component: taskmanager
+    spec:
+      containers:
+        - name: taskmanager
+          image: "ai-deequ-orchestrator-flink-stream-agent:latest"
+          imagePullPolicy: IfNotPresent
+          command: ["/opt/flink/bin/taskmanager.sh"]
+          args: ["start-foreground"]
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "/opt/flink/bin/taskmanager.sh stop-foreground"]
+          # 🚀 CORRECCIÓN: 'env' en lugar de 'environment'
+          env:
+            - name: FLINK_PROPERTIES
+              value: |
+                jobmanager.rpc.address: ai-deequ-flink-jobmanager
+                taskmanager.memory.process.size: 1536m
+                taskmanager.numberOfTaskSlots: 2
+                state.backend: filesystem
+                state.checkpoints.dir: file:///opt/flink/checkpoints
+                pulsar.broker.url: pulsar://{{ .Release.Name }}-pulsar-proxy:6650
+                pulsar.topic.chat: persistent://orchestra/quality-mesh/chat-messages-raw
+                pulsar.topic.contract: persistent://orchestra/quality-mesh/data-contracts-dama
+                redis.host: {{ .Release.Name }}-redis-master
+                redis.password: {{ .Values.redis.auth.password }}
+          resources:
+            limits:
+              cpu: "1000m"
+              memory: "1536Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-deequ-flink-jobmanager
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - port: 6123
+      name: rpc
+    - port: 8081
+      name: webui
+  selector:
+    app: ai-deequ-flink
+    component: jobmanager

@@ -1,0 +1,10 @@
+
+# CONFIGURACIÓN MINIMIZADA DE SPARK PARA PRUEBAS LOCALES
+sparkCluster:
+  enabled: true
+  worker:
+    replicas: 2  # Solo 2 nodos esclavos
+    resources:
+      limits:
+        cpu: "500m"   # 0.5 CPUs por nodo
+        memory: "512Mi" # Memoria RAM mínima de la JVM para Spark

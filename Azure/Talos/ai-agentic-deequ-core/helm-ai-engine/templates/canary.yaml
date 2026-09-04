@@ -1,0 +1,32 @@
+{{- if .Values.canary.enabled }}
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: {{ include "helm-ai-engine.fullname" . }}-canary
+  namespace: {{ .Values.namespace }}
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "helm-ai-engine.fullname" . }}-deployment
+  service:
+    port: 50051
+    targetPort: grpc-port
+    name: {{ include "helm-ai-engine.fullname" . }}-service
+  analysis:
+    interval: {{ .Values.canary.analysisInterval }}
+    threshold: {{ .Values.canary.thresholdFailures }}
+    maxWeight: {{ .Values.canary.maxWeight }}
+    stepWeight: {{ .Values.canary.stepWeight }}
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99.0
+      interval: 1m
+    - name: "deequ_core_inference_latency_microseconds"
+      templateRef:
+        name: grpc-latency-template
+      thresholdRange:
+        max: {{ .Values.canary.latencyMaxMicroseconds }}
+      interval: 30s
+{{- end }}

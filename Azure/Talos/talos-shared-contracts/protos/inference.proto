@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package inference;
+
+message TelemetryData {
+    string sensor_id = 1;
+    double metric_value = 2;
+    string region = 3;
+}
+
+message InferenceRequest {
+    string trace_id = 1;
+    int32 step_sequence = 2;
+    string previous_hash = 3;
+    TelemetryData telemetry = 4;
+    map<string, string> metadata = 5;
+}
+
+message InferenceResponse {
+    string ledger_id = 1;
+    double confidence_score = 2;
+    bool is_anomaly = 3;
+}
+
+service InferenceEngine {
+    rpc ProcessInference (InferenceRequest) returns (InferenceResponse);
+}

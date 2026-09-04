@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-deequ-nlp-brain
+  namespace: ai-deequ
+  labels:
+    app: ai-deequ-nlp-brain
+    tier: analytics
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-deequ-nlp-brain
+  template:
+    metadata:
+      labels:
+        app: ai-deequ-nlp-brain
+    spec:
+      containers:
+        - name: nlp-brain-engine
+          # Apunta a la imagen exacta que acabamos de compilar en el paso anterior en Colima
+          image: ai-nlp-registry.local/nlp-ml-brain:4.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+              name: http-asgi
+          env:
+            - name: APP_ENV
+              value: "production"
+            - name: DEFAULT_NLP_MODEL
+              value: "es_core_news_sm"
+            - name: INTENT_CONFIDENCE_THRESHOLD
+              value: "0.60"
+          resources:
+            limits:
+              cpu: "1.5"
+              memory: 1536Mi
+            requests:
+              cpu: "500m"
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 10

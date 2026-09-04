@@ -1,0 +1,56 @@
+# ======================================================================================================================
+# ETAPA 1: BUILD ENVIRONMENT (COMPILACIÓN OPTIMIZADA CON CACHÉ DE CAPAS)
+# ======================================================================================================================
+FROM sbtproject/sbt:1.9.7-alpine as builder
+
+WORKDIR /app
+
+# Copiar manifiestos estructurales primarios para congelar dependencias en el caché
+COPY project/ /app/project/
+COPY build.sbt /app/
+RUN sbt update
+
+# Copiar el código fuente y modelos Protobuf del ecosistema
+COPY custom-api/ /app/custom-api/
+COPY core-models/ /app/core-models/
+
+# Ejecutar el ensamble formal del Fat JAR inmutable
+RUN sbt "project customApi" assembly
+
+# ======================================================================================================================
+# ETAPA 2: RUNTIME ENTORNO DE PRODUCCIÓN INDUSTRIAL (SEGURIDAD Y RESILIENCIA)
+# ======================================================================================================================
+FROM eclipse-temurin:11-jre-alpine
+
+WORKDIR /opt/orchestra
+
+# Sincronización horaria exacta con tu Mac para destrabar el buffer de logs
+RUN apk add --no-cache tzdata
+ENV TZ=America/Mexico_City
+
+# Gobernanza estricta de seguridad no-root corporativa
+RUN addgroup -g 10001 orchestra && \
+    adduser -D -u 10001 -G orchestra orchestra
+
+# Extraer el artefacto ejecutable real desde la salida unificada de la etapa de compilación
+COPY --from=builder /app/target/artifacts/custom-api.jar /opt/orchestra/custom-api.jar
+
+# Cierre de privilegios de disco
+RUN chown -R orchestra:orchestra /opt/orchestra
+USER 10001
+
+# Puerto analítico HTTP expuesto en la malla de Kubernetes
+EXPOSE 8082
+
+# Optimización elástica de la Máquina Virtual de Java para contenedores
+ENTRYPOINT [ \
+  "java", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-Xms512m", \
+  "-XX:+UseG1GC", \
+  "-XX:+ExitOnOutOfMemoryError", \
+  "-XX:+CrashOnOutOfMemoryError", \
+  "-jar", \
+  "/opt/orchestra/custom-api.jar" \
+]

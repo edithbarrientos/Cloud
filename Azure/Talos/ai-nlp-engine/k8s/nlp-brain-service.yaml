@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-deaqu-nlp-brain-service
+  namespace: ai-deequ
+  labels:
+    app: ai-deequ-nlp-brain
+    tier: analytics
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8000
+      targetPort: 8000
+      protocol: TCP
+      name: http-asgi
+  selector:
+    app: ai-deequ-nlp-brain

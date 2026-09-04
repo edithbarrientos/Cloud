@@ -1,0 +1,92 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-master
+  namespace: {{ .Release.Namespace }}
+  labels:
+    component: spark-master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: spark-master
+  template:
+    metadata:
+      labels:
+        component: spark-master
+    spec:
+      containers:
+        - name: spark-master
+          image: "apache/spark:3.5.0" # 🚀 CAMBIADO: Imagen oficial pública
+          imagePullPolicy: IfNotPresent
+          command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.master.Master"]
+          ports:
+            - containerPort: 7077
+              name: cluster
+            - containerPort: 8080
+              name: webui
+          env:
+            - name: SPARK_MASTER_HOST
+              value: "spark-master"
+          resources:
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spark-master
+  namespace: {{ .Release.Namespace }}
+spec:
+  ports:
+    - port: 7077
+      targetPort: 7077
+      name: cluster
+    - port: 8080
+      targetPort: 8080
+      name: webui
+  selector:
+    component: spark-master
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spark-worker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    component: spark-worker
+spec:
+  replicas: {{ .Values.sparkCluster.worker.replicas }}
+  selector:
+    matchLabels:
+      component: spark-worker
+  template:
+    metadata:
+      labels:
+        component: spark-worker
+    spec:
+      containers:
+        - name: spark-worker
+          image: "apache/spark:3.5.0" # 🚀 CAMBIADO: Imagen oficial pública
+          imagePullPolicy: IfNotPresent
+          command: ["/opt/spark/bin/spark-class", "org.apache.spark.deploy.worker.Worker", "spark://spark-master:7077"]
+          env:
+            - name: SPARK_WORKER_MEMORY
+              value: "384m"
+            - name: SPARK_WORKER_CORES
+              value: "1"
+            - name: SPARK_DAEMON_JAVA_OPTS
+              value: "-Xms384m -Xmx384m -XX:+UseG1GC -XX:+ExitOnOutOfMemoryError"
+            - name: REDIS_HOST
+              value: "{{ .Release.Name }}-redis-master"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              value: "{{ .Values.redis.auth.password }}"
+            - name: PULSAR_TOPIC_QUALITY
+              value: "persistent://orchestra/quality-mesh/data-quality-metrics"
+          resources:
+            limits:
+              cpu: {{ .Values.sparkCluster.worker.resources.limits.cpu | quote }}
+              memory: {{ .Values.sparkCluster.worker.resources.limits.memory | quote }}

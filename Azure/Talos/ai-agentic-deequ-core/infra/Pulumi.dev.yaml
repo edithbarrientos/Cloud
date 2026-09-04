@@ -1,0 +1,7 @@
+encryptionsalt: v1:xTQneIGLz28=:v1:SPAvpL+BtvdflGQ9:jNu2+rFtGw6rX/yFwj5Xj1mE2mdGoQ==
+config:
+  azure-native:tenantId: tu-tenant-id-hexadecimal
+  azure-native:location: eastus
+  azure-native:subscriptionId: 92f8b9d3-e52d-4f27-9ec4-f1720263567c
+  ai-agentic-deequ-core:rgName: rg-ai-agentic-deequ-dev
+  ai-agentic-deequ-core:kvName: kv-deequ-core-dev

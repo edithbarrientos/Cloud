@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.orchestra.ado.gateway.grpc";
+option java_outer_classname = "ChatGatewayProto";
+
+package com.orchestra.ado.gateway.grpc;
+
+service ChatIngressService {
+  rpc IngestChatMessage (ChatMessageRequest) returns (ChatMessageResponse);
+}
+
+message ChatMessageRequest {
+  string tenant_id = 1;
+  string session_id = 2;
+  string message_payload = 3;
+  int64 timestamp = 4;
+}
+
+message ChatMessageResponse {
+  string status = 1;
+  string message_id = 2;
+  string diagnostics = 3;
+}
