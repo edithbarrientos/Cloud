@@ -337,7 +337,7 @@ Usa el código con precaución.Con estas dos descripciones perfectamente estruct
 
 ## 📐 Diagrama de infraestructura Cloud Native
 <div align="center">
-  <img src="QuantumStreamAgent-2026-09-05-164442.png" alt="Diagrama de Arquitectura K8s" width="100%">
+  <img src="imeges/QuantumStreamAgent-2026-09-05-164442.png" alt="Diagrama de Arquitectura K8s" width="100%">
 </div>
 
 ---
