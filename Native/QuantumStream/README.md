@@ -337,58 +337,33 @@ Usa el código con precaución.Con estas dos descripciones perfectamente estruct
 
 ## 📐 Diagrama de infraestructura Cloud Native
 
-<div style="background-color: #ffffff; padding: 40px; border-radius: 16px; width: 100%; max-width: 1700px; min-height: 1600px; margin: 0 auto; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column;">
-
-<style>
-  /* Fuerza al contenedor de Markdown a ocupar todo el espacio disponible */
-  .mermaid {
-    width: 100% !important;
-    height: 1700px !important; 
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
+mermaid%%{init: { 
+  'theme': 'base', 
+  'themeVariables': { 
+    'background': '#ffffff', 
+    'mainBkg': '#ffffff', 
+    'clusterBkg': '#ffffff', 
+    'clusterBorder': '#000000',
+    'lineColor': '#00bfff', 
+    'textColor': '#000000', 
+    'titleColor': '#000000', 
+    'fontSize': '20px', 
+    'labelBackground': '#ffffff', 
+    'edgeLabelBackground': '#ffffff'
+  }, 
+  'flowchart': { 
+    'useMaxWidth': true, 
+    'htmlLabels': true, 
+    'nodeSpacing': 70, 
+    'rankSpacing': 80 
   }
-  
-  /* Estira el gráfico vectorial al 100% del contenedor */
-  .mermaid svg {
-    width: 100% !important;
-    height: 100% !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-  }
+}}%%
 
-  /* ─── COSERVA TODAS LAS LETRAS EN NEGRO PURO Y GRANDES ─── */
-  .mermaid svg, 
-  .mermaid text, 
-  .mermaid .node text, 
-  .mermaid .edgeText text, 
-  .mermaid .cluster-label text, 
-  .mermaid .label text,
-  .mermaid span {
-    fill: #000000 !important;
-    color: #000000 !important;
-    font-weight: 720 !important;
-  }
-
-  /* ─── LA PROPIEDAD INYECTADA PARA FORZAR TODOS LOS BORDES DE LAS CAJAS EN NEGRO PURO ─── */
-  .mermaid .node rect,
-  .mermaid .node circle,
-  .mermaid .node polygon,
-  .mermaid .node path,
-  .mermaid .cluster rect {
-    stroke: #000000 !important;
-    stroke-width: 2.5px !important;
-  }
-</style>
-
-<div style="overflow-x: auto;">
-<pre>
-%%{init: { 'theme': 'base', 'themeVariables': { 'background': '#ffffff', 'mainBkg': '#ffffff', 'clusterBkg': '#ffffff', 'lineColor': '#00bfff', 'textColor': '#000000', 'titleColor': '#000000', 'fontSize': '36px', 'labelBackground': '#ffffff', 'edgeLabelBackground': '#ffffff' }, 'flowchart': { 'useMaxWidth': false, 'htmlLabels': true, 'nodeSpacing': 90, 'rankSpacing': 100 }}}%%
 graph TB
-    %% Estilos de Contornos y Texto Principal en Negro (Letra Grande)
-    classDef customStyle fill:#ffffff,stroke:#000000,stroke-width:2.5px,color:#000000;
+    %% Definición nativa del estilo de nodos (Letras negras, fondo blanco, contorno grueso)
+    classDef customStyle fill:#ffffff,stroke:#000000,stroke-width:2.5px,color:#000000,font-weight:700;
     
-    %% Configuración de las líneas de conexión en Azul Cielo Grueso
+    %% Configuración de líneas de conexión por defecto
     linkStyle default stroke:#00bfff,stroke-width:2.5px;
 
     %% Entrada de Tráfico Externa
@@ -402,53 +377,53 @@ graph TB
         %% Balanceador de Entrada Open Source
         Ingress["Cilium Ingress / Envoy<br>Load Balancer Nativo<br>Port: 9000"]:::customStyle
 
-        %% 🔲 NODE POOL 1: CÓMPUTO INTERACTIVO Y AGENTES
+        %% NODE POOL 1: CÓMPUTO INTERACTIVO Y AGENTES
         subgraph NS_Agents [Namespace: quantumstream-agents]
             subgraph P1 [Pod Worker 1]
-                A1["Akka Agent Service<br>HTTP: 9000 \| Remote: 25520"]:::customStyle
+                A1["Akka Agent Service<br>HTTP: 9000 | Remote: 25520"]:::customStyle
                 Prom1["Prometheus Exporter<br>Metrics Port: 9090"]:::customStyle
             end
 
             subgraph P2 [Pod Worker 2]
-                A2["Akka Agent Service<br>HTTP: 9000 \| Remote: 25520"]:::customStyle
+                A2["Akka Agent Service<br>HTTP: 9000 | Remote: 25520"]:::customStyle
                 Prom2["Prometheus Exporter<br>Metrics Port: 9090"]:::customStyle
             end
 
             subgraph P3 [Pod Worker 3]
-                A3["Akka Agent Service<br>HTTP: 9000 \| Remote: 25520"]:::customStyle
+                A3["Akka Agent Service<br>HTTP: 9000 | Remote: 25520"]:::customStyle
                 Prom3["Prometheus Exporter<br>Metrics Port: 9090"]:::customStyle
             end
             
             %% El Cerebro Predictivo interno de Akka
-            IA_Engine["🧠 Cache Locality Predictor<br>Internal Akka IA Submodule<br>Optimiza Asignación de Actores"]:::customStyle
+            IA_Engine["Cache Locality Predictor<br>Internal Akka IA Submodule<br>Optimiza Asignacion de Actores"]:::customStyle
         end
 
-        %% 🔲 NODE POOL 2: INTELIGENCIA ARTIFICIAL (Nodos con GPUs)
+        %% NODE POOL 2: INTELIGENCIA ARTIFICIAL (Nodos con GPUs)
         subgraph NS_AI [Namespace: quantumstream-ai]
-            LLM["Pod: Local LLM Pool<br>Ollama / vLLM Deployment<br>gRPC API Port: 11434<br>Aceleración por GPU"]:::customStyle
+            LLM["Pod: Local LLM Pool<br>Ollama / vLLM Deployment<br>gRPC API Port: 11434<br>Aceleracion por GPU"]:::customStyle
         end
 
-        %% 🔲 NODE POOL 3: CIENCIA DE DATOS Y WORKFLOWS (Ecosistema MLOps)
+        %% NODE POOL 3: CIENCIA DE DATOS Y WORKFLOWS (Ecosistema MLOps)
         subgraph NS_MLOps [Namespace: quantumstream-mlops]
-            Jupyter["📓 JupyterHub Server<br>Gestor de Notebooks Corporativos<br>Entorno de Desarrollo \| Port: 8000"]:::customStyle
-            Argo["⚙️ Argo Workflows<br>Orquestador de Pipelines de ML<br>Control de DAGs \| Port: 2746"]:::customStyle
+            Jupyter["JupyterHub Server<br>Gestor de Notebooks Corporativos<br>Entorno de Desarrollo | Port: 8000"]:::customStyle
+            Argo["Argo Workflows<br>Orquestador de Pipelines de ML<br>Control de DAGs | Port: 2746"]:::customStyle
         end
 
-        %% 🔲 NODE POOL 4: CÓMPUTO POR LOTES MASIVO (Apache Spark Engine)
+        %% NODE POOL 4: CÓMPUTO POR LOTES MASIVO (Apache Spark Engine)
         subgraph NS_Spark [Namespace: quantumstream-spark]
-            SparkOp["⚡ Spark on K8s Operator<br>Controlador de Jobs Elásticos<br>Orquesta Malla de Ejecutores"]:::customStyle
-            SparkDriver["Pod: Spark Driver<br>Gestor DAG Analítico<br>Bifurca Carga de Petabytes"]:::customStyle
-            SparkExec["Pods: Spark Executors<br>Nodos de Cómputo Efímeros<br>Procesamiento Multihilo"]:::customStyle
+            SparkOp["Spark on K8s Operator<br>Controlador de Jobs Elasticos<br>Orquesta Malla de Ejecutores"]:::customStyle
+            SparkDriver["Pod: Spark Driver<br>Gestor DAG Analitico<br>Bifurca Carga de Petabytes"]:::customStyle
+            SparkExec["Pods: Spark Executors<br>Nodos de Computo Efimeros<br>Procesamiento Multihilo"]:::customStyle
         end
 
-        %% 🔲 NODE POOL 5: PERSISTENCIA Y METADATOS
+        %% NODE POOL 5: PERSISTENCIA Y METADATOS
         subgraph NS_Storage [Namespace: quantumstream-storage]
             PG["StatefulSet: PostgreSQL<br>Local Persistent Volume<br>Port: 5432"]:::customStyle
             Nessie["StatefulSet: Project Nessie<br>Iceberg REST Catalog<br>Port: 8181"]:::customStyle
             MinIO["StatefulSet: MinIO Distributed<br>S3 Open Source Storage<br>Format: Apache Iceberg<br>Port: 9000"]:::customStyle
         end
 
-        %% 🔲 NODE POOL 6: MONITOREO Y OBSERVABILIDAD
+        %% NODE POOL 6: MONITOREO Y OBSERVABILIDAD
         subgraph NS_Monitoring [Namespace: cloud-native-monitoring]
             Prom["Prometheus Server<br>Scrapes Metrics"]:::customStyle
             Loki["Grafana Loki<br>Centralizes Logs"]:::customStyle
@@ -456,29 +431,29 @@ graph TB
         end
     end
 
-    %% 🧱 CAPA DE INFRAESTRUCTURA COMO CÓDIGO INTERACTIVA (PULUMI)
-    Pulumi["🧱 Pulumi IaC Engine<br>Python SDK / Automation API<br>Gobierna Node Pools en Vivo"]:::customStyle
+    %% CAPA DE INFRAESTRUCTURA COMO CÓDIGO INTERACTIVA (PULUMI)
+    Pulumi["Pulumi IaC Engine<br>Python SDK / Automation API<br>Gobierna Node Pools en Vivo"]:::customStyle
 
     %% Relaciones de Flujo y Comunicación
     User --> Ingress
     Ingress --> A1
     Ingress --> A2
-    Ingress --> |Acceso Cientificos| Jupyter
+    Ingress --> Jupyter
 
     %% Intercepción Inteligente de la Consulta antes de crear actores (Ruta Akka)
     A1 & A2 & A3 --> IA_Engine
-    IA_Engine -.-> |Directiva de Ruteo| A1 & A2 & A3
+    IA_Engine -.-> A1 & A2 & A3
     A1 <--> A2
     A2 <--> A3
     A3 <--> A1
 
     %% Orquestación de Modelos y Automatización desde Jupyter/Argo
-    Jupyter --> |Define Pasos| Argo
-    Argo --> |Dispara Batch ETL| SparkOp
-    Argo --> |Solicita Vectores| LLM
+    Jupyter --> Argo
+    Argo --> SparkOp
+    Argo --> LLM
 
     %% Enrutamiento Inteligente hacia la Capa por Lotes (Ruta Spark)
-    A1 & A2 & A3 --> |Dispara Job proto| SparkOp
+    A1 & A2 & A3 --> SparkOp
     SparkOp --> SparkDriver
     SparkDriver <--> SparkExec
 
@@ -490,14 +465,14 @@ graph TB
     A1 --> MinIO
     A2 --> MinIO
     SparkExec --> MinIO
-    Jupyter --> |Persistencia Notebooks| MinIO
+    Jupyter --> MinIO
 
     %% Llamadas al Namespace de Inteligencia Artificial (Internal K8s DNS)
-    A2 --> |Port 11434| LLM
+    A2 --> LLM
 
     %% Gobernanza de Infraestructura Dinámica por Pulumi
-    A1 & SparkOp & Argo --> |Metricas Carga| Pulumi
-    Pulumi ==> |Autoescala K8s Pools| K8S_Cluster
+    A1 & SparkOp & Argo --> Pulumi
+    Pulumi ==> K8S_Cluster
 
     %% Flujo de Monitoreo, Métricas y Logs Abiertos
     Prom1 --> Prom
@@ -512,9 +487,6 @@ graph TB
     %% Conexión interna hacia el panel visual final (Grafana)
     Prom --> Grafana
     Loki --> Grafana
-</pre>
-</div>
-
 
 ---
 
