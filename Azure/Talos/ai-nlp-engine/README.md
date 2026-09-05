@@ -7,7 +7,8 @@ Ulti-tenant de alta disponibilidad diseñada para la ingesta, serialización y c
 
 ## 📐 Radiografía de la Arquitectura Distribuida
 
-```text
+<div style="overflow-x: auto;">
+<pre>
 ========================================================================================================================
                           🪐 DIAGRAMA GLOBAL DE ARQUITECTURA
 ========================================================================================================================
@@ -80,7 +81,9 @@ Ulti-tenant de alta disponibilidad diseñada para la ingesta, serialización y c
    🪐 Patrón de Resiliencia: Fallback Automático a Base Global [es_core_news_sm] en caso de Directorio Inexistente.
 
 ========================================================================================================================
-```
+
+</pre>
+</div>
 
 El flujo transaccional opera bajo el patrón de abanico (*Fan-Out Pattern*) garantizando latencias lineales sub-milisegundo de extremo a extremo:
 
@@ -98,89 +101,8 @@ El agente de IA está diseñado bajo una arquitectura modular y desacoplada. Cad
 
 ### 🗺️ Diagrama de Componentes, Flujos y Algoritmos
 
-<div style="background-color: white; padding: 40px; border-radius: 12px; border: 2px solid #87CEEB; margin: 25px 0; color: black; overflow: auto; width: 100%; max-width: 100%; min-width: 1600px; display: block;">
-
-:::mermaid
-graph TB
-
-    subgraph SUB_CAPA1 ["<h1><b>1. Capa de Entrada y Control</b></h1>"]
-        API["<h2><b>[Flujo 1] 📩 API Gateway / Event Bus</b></h2>Algoritmo: Round Robin / Least Conn"]
-        INGEST["<h2><b>[Flujo 2] 📥 Ingestion & Telemetry Manager</b></h2>Mecanismo: Trace Context Propag."]
-        IDEM["<h2><b>[Flujo 3] 🆔 Idempotency & Trace Controller</b></h2>Algoritmo: Hashing (SHA-256)"]
-        
-        API --> INGEST
-        INGEST --> IDEM
-    end
-
-    subgraph SUB_CAPA2 ["<h1><b>2. Núcleo del Agente / Razonamiento (MAS Engine)</b></h1>"]
-        ORCH["<h2><b>[Flujo 4] 🧠 Agent Orchestrator</b></h2><b>Patrón:</b> Finite State Machine (FSM)<br/><b>Input:</b> Raw Event / Trace ID<br/><b>Output:</b> State Transition Event"]
-        LLM["<h2><b>[Flujo 5] 🤖 LLM Engine / ReAct Loop</b></h2><b>Goal:</b> Resolver subtareas secuenciales<br/><b>Knowledge:</b> System Prompts / ReAct Framework<br/><b>Input:</b> Prompt + Herramientas Disponibles<br/><b>Output:</b> Tool Invocation / Final Response"]
-        PROMPT["<h2><b>[Flujo 6] 📜 Prompt & Context Manager</b></h2><b>Goal:</b> Maximizar relevancia del contexto<br/><b>Knowledge:</b> Límites de Ventana de Tokens / Sliding Window<br/><b>Input:</b> Historial conversacional crudo<br/><b>Output:</b> Contexto truncado optimizado"]
-        
-        IDEM --> ORCH
-        ORCH <--> LLM
-        ORCH <--> PROMPT
-    end
-
-    subgraph SUB_CAPA3 ["<h1><b>3. Capa de Ejecución & Herramientas</b></h1>"]
-        EXEC["<h2><b>[Flujo 7] 🛠️ Tool Execution Engine</b></h2>Algoritmo: Dynamic Dispatch / Router"]
-        CB["<h2><b>[Flujo 8] 🔌 Circuit Breaker & Resiliency</b></h2>Algoritmo: Counting Window / Backoff"]
-        VECTOR["<h2><b>[Flujo 9A] 🔍 RAG / Vector DB Client</b></h2>Algoritmo: HNSW / Similitud de Coseno"]
-        APIS["<h2><b>[Flujo 9B] 📡 Microservices & External APIs</b></h2>Algoritmo: Token Bucket (Rate Limiting)"]
-        
-        ORCH --> EXEC
-        EXEC --> CB
-        CB --> VECTOR
-        CB --> APIS
-    end
-
-    subgraph SUB_CAPA4 ["<h1><b>4. Capa de Datos & Consistencia</b></h1>"]
-        CONS["<h2><b>[Flujo 10] ⚖️ Consistency & Transaction Manager</b></h2>Teorema: Clasificador PACELC (CP / AP)"]
-        SAGA["<h2><b>[Flujo 11A] 🏗️ SAGA / 2PC Orchestrator</b></h2>Algoritmo: Compensating Transactions"]
-        MEM["<h2><b>[Flujo 11B] 💾 Session Memory Driver</b></h2>Algoritmo: Consistent Hashing / LRU Cache"]
-        
-        ORCH --> CONS
-        CONS --> SAGA
-        CONS --> MEM
-    end
-
-    %% Flujo de Retorno / Salida
-    OUT["<h2><b>[Flujo 12] 📤 Egress / Response Dispatcher</b></h2>Mecanismo: Async Event Push"]
-    
-    VECTOR --> OUT
-    APIS --> OUT
-    MEM --> OUT
-    SAGA --> OUT
-    OUT --> API
-
-    %% Estilos individuales a prueba de errores para texto negro y bordes limpios
-    style API fill:#e1f5fe,stroke:#000000,stroke-width:2px,color:#000000;
-    style INGEST fill:#e1f5fe,stroke:#000000,stroke-width:2px,color:#000000;
-    style IDEM fill:#e1f5fe,stroke:#000000,stroke-width:2px,color:#000000;
-    
-    style ORCH fill:#f3e5f5,stroke:#000000,stroke-width:2px,color:#000000;
-    style LLM fill:#f3e5f5,stroke:#000000,stroke-width:2px,color:#000000;
-    style PROMPT fill:#f3e5f5,stroke:#000000,stroke-width:2px,color:#000000;
-    
-    style EXEC fill:#efebe9,stroke:#000000,stroke-width:2px,color:#000000;
-    style CB fill:#efebe9,stroke:#000000,stroke-width:2px,color:#000000;
-    style VECTOR fill:#efebe9,stroke:#000000,stroke-width:2px,color:#000000;
-    style APIS fill:#efebe9,stroke:#000000,stroke-width:2px,color:#000000;
-    
-    style CONS fill:#e8f5e9,stroke:#000000,stroke-width:2px,color:#000000;
-    style SAGA fill:#e8f5e9,stroke:#000000,stroke-width:2px,color:#000000;
-    style MEM fill:#e8f5e9,stroke:#000000,stroke-width:2px,color:#000000;
-    
-    style OUT fill:#e1f5fe,stroke:#000000,stroke-width:2px,color:#000000;
-    
-    %% BORDES DE CAPAS RESALTADOS EN NEGRO GRUESO CON LETRA GRANDE
-    style SUB_CAPA1 fill:#ffffff,stroke:#000000,stroke-width:4px,color:#000000;
-    style SUB_CAPA2 fill:#ffffff,stroke:#000000,stroke-width:4px,color:#000000;
-    style SUB_CAPA3 fill:#ffffff,stroke:#000000,stroke-width:4px,color:#000000;
-    style SUB_CAPA4 fill:#ffffff,stroke:#000000,stroke-width:4px,color:#000000;
-:::
-
-  </div>
+<div align="center">
+  <img src="images/CapaEntradaControl-2026-09-05-172449.png" alt="Diagrama de Arquitectura K8s" width="100%">
 </div>
 
 
