@@ -10,6 +10,8 @@ metadata:
   namespace: nexus-mesh
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: dev-ui-real
@@ -74,6 +76,8 @@ metadata:
   namespace: nexus-mesh
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: chatbot-backend
@@ -84,7 +88,7 @@ spec:
     spec:
       containers:
       - name: backend
-        image: chatbot-backend:v12
+        image: chatbot-backend:v16
         imagePullPolicy: IfNotPresent
         command: ["sh", "-c"]
         args:

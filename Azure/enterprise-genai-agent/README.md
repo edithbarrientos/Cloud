@@ -23,7 +23,8 @@ Un Agente de IA Orquestador que:
 ## 💼 Componentes diseñado específicamente para tu estructura de proyecto
 
 
-```css
+<div style="overflow-x: auto;">
+<pre>
 +---------------------------------------------------------------------------------------------------------+
 
 |                                    ENTERPRISE GENAI AGENT SYSTEM                                        |
@@ -94,7 +95,8 @@ Un Agente de IA Orquestador que:
 |   | Pruebas de Calidad QA |                               | Validación de Lógica del Agente  |          |
 |   +-----------------------+                               +----------------------------------+          |
 +---------------------------------------------------------------------------------------------------------+
-```
+</pre>
+</div>
 
 
 ## 🏗️ Descripción Detallada del Flujo
@@ -113,7 +115,8 @@ Un Agente de IA Orquestador que:
 ## 📂 Estructura del Repositorio
 
 
-```markdown
+<div style="overflow-x: auto;">
+<pre>
 
 enterprise-genai-agent/
 ├── .dockerignore         # Exclusiones de empaquetado para Docker
@@ -138,7 +141,8 @@ enterprise-genai-agent/
 │           └── strategies.py # Conector resiliente al ERP (Tenacity)
 └── tests/
     └── test_agente.py    # Script de bypass para pruebas rápidas de procesamiento QA
-```
+</pre>
+</div>
 
 ---
 

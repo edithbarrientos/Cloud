@@ -22,7 +22,8 @@ El diseño de infraestructura garantiza el cumplimiento normativo mediante los s
 
 El código está organizado de forma limpia utilizando submódulos locales y aislamiento de componentes:
 
-```text
+<div style="overflow-x: auto;">
+<pre>
 📦 azure-databricks-terraform
  ┣ 📜 main.tf                  # 🔵 Orquestador raíz (Resource Groups, VNets, Peering, Bastion y VM Linux)
  ┣ 📜 providers.tf             # 🟤 Definición de proveedores (AzureRM, Databricks y HTTP)
@@ -36,7 +37,8 @@ El código está organizado de forma limpia utilizando submódulos locales y ais
        ├── main.tf             # 🟣 Workspace Premium, Private Endpoint y registros DNS interregionales
        ├── outputs.tf          # 🟣 Exportación de la URL segura del Workspace y su ID de recurso
        └── variables.tf        # 🟣 Parámetros de configuración e inyección de red con validaciones
-```
+</pre>
+</div>
 
 ---
 
@@ -139,7 +141,8 @@ Para elevar esta infraestructura a un estándar de grado de producción corporat
 
 ---
 
-```text
+<div style="overflow-x: auto;">
+<pre>
 📦 Estructura de Carpetas Objetivo (Target Enterprise):
  ┣ 📜 backend.tf               # 🔵 Remote Backend con almacenamiento RA-GRS (Resiliencia Geográfica)
  ┣ 📜 main.tf                  # 🔵 Orquestador raíz (RG, Peering Híbrido, UDR, Bastion y VM Linux)
@@ -147,3 +150,5 @@ Para elevar esta infraestructura a un estándar de grado de producción corporat
  ┣ 📜 terraform.tfvars         # 🔵 Inyección de valores específicos del ambiente actual
  ┣ 📜 variables.tf             # 🔵 Declaraciones y validaciones de variables del proyecto raíz
  ┗ 📂 modules
+</pre>
+</div>

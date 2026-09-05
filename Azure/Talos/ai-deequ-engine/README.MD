@@ -8,7 +8,8 @@ Motor de procesamiento de datos de misión crítica basado en Apache Flink y Sca
 
 ## 🏛️ 1. Arquitectura de la Solución y Niveles del Sistema
 
-```text
+<div style="overflow-x: auto;">
+<pre>
 ========================================================================================
  CAPA 1: INFRAESTRUCTURA PERIMETRAL (Event Ingestion Layer)
 ========================================================================================
@@ -55,8 +56,9 @@ Motor de procesamiento de datos de misión crítica basado en Apache Flink y Sca
                                         └── NER Extractor    🤖 (Campos Aleatorios Condicionales - CRF)
 ========================================================================================
 
+</pre>
+</div>
 
-```
 
 1. Aislamiento de Carga (Capas 1 y 2): Flink mantiene el stream volando a nivel de microsegundos en la Capa 2 [local]. Al despachar la petición de forma asíncrona, delega la carga computacional pesada hacia las capas inferiores de la Inteligencia Artificial [local].
 
@@ -86,7 +88,8 @@ Motor de procesamiento de datos de misión crítica basado en Apache Flink y Sca
 
 El siguiente diagrama detalla la interacción cronológica y el comportamiento no bloqueante de los hilos distribuidos entre Apache Pulsar, Apache Flink y el Cerebro de NLP:
 
-```text
+<div style="overflow-x: auto;">
+<pre>
 [Gateway API]          [Apache Pulsar]        [StreamApp (Flink)]     [AsyncAIEvaluator]     [nlp-ml-brain]
       │                       │                        │                       │                    │
       │ 1. POST Ingest JSON   │                        │                       │                    │
@@ -136,8 +139,8 @@ El siguiente diagrama detalla la interacción cronológica y el comportamiento n
       │                       │                        │                       │                    │
       ▼                       ▼                        ▼                       ▼                    ▼
 
-
-```
+</pre>
+</div>
 
 
 ### 🔍 Descripción del Flujo del Diagrama
@@ -153,7 +156,8 @@ El siguiente diagrama detalla la interacción cronológica y el comportamiento n
 
 ## 📦 4. Estructura Completa del Proyecto y Descripción de Componentes
 
-```text
+<div style="overflow-x: auto;">
+<pre>
 ai-nlp-engine/                        --> 🚀 Raíz Única del Repositorio Completo (Monorepo)
 ├── ⚙️ .github/workflows/             --> Automatización de CI/CD para Flink y Python
 ├── ☸️ k8s/                            --> Manifiestos de despliegue para todo el clúster
@@ -186,13 +190,13 @@ ai-nlp-engine/                        --> 🚀 Raíz Única del Repositorio Comp
     │       ├── 🧪 analyzer.py        --> Pipeline de NLP (Intent Detection, Sentiment, NER)
     │       └── 🔀 tenant_router.py   --> Router Multicliente (Carga dinámica desde models_store/)
     └── 📂 tests/                     --> Validaciones de calidad de software e IA (F1-Score)
-```
+</pre>
+</div>
 
 ---
 
 
 ## 📜 4. Contratos de Datos (Data Contracts)
-
 
 ### 📥 Contrato de Entrada (Hacia Flink / Python via Protobuf)
 Definido en `proto/chat_anomaly.proto`:
