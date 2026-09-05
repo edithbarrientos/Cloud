@@ -337,144 +337,111 @@ Usa el código con precaución.Con estas dos descripciones perfectamente estruct
 
 ## 📐 Diagrama de infraestructura Cloud Native
 
-mermaid%%{init: { 
-  'theme': 'base', 
-  'themeVariables': { 
-    'background': '#ffffff', 
-    'mainBkg': '#ffffff', 
-    'clusterBkg': '#ffffff', 
-    'clusterBorder': '#000000',
-    'lineColor': '#00bfff', 
-    'textColor': '#000000', 
-    'titleColor': '#000000', 
-    'fontSize': '20px', 
-    'labelBackground': '#ffffff', 
-    'edgeLabelBackground': '#ffffff'
-  }, 
-  'flowchart': { 
-    'useMaxWidth': true, 
-    'htmlLabels': true, 
-    'nodeSpacing': 70, 
-    'rankSpacing': 80 
-  }
-}}%%
-
 graph TB
-    %% Definición nativa del estilo de nodos (Letras negras, fondo blanco, contorno grueso)
-    classDef customStyle fill:#ffffff,stroke:#000000,stroke-width:2.5px,color:#000000,font-weight:700;
-    
-    %% Configuración de líneas de conexión por defecto
-    linkStyle default stroke:#00bfff,stroke-width:2.5px;
+    classDef customStyle fill:#ffffff,stroke:#000000,stroke-width:2px,color:#000000;
+    linkStyle default stroke:#00bfff,stroke-width:2px;
 
-    %% Entrada de Tráfico Externa
-    subgraph WAN [RED EXTERNA]
-        User["User / Client<br>HTTPS: 443"]:::customStyle
+    subgraph WAN ["RED EXTERNA"]
+        User["User / Client - HTTPS: 443"]:::customStyle
     end
 
-    %% Red interna del Clúster de Kubernetes Nativo Completo
-    subgraph K8S_Cluster [Pure Kubernetes Cluster - quantumstream-core]
-        
-        %% Balanceador de Entrada Open Source
-        Ingress["Cilium Ingress / Envoy<br>Load Balancer Nativo<br>Port: 9000"]:::customStyle
+    subgraph K8S_Cluster ["Pure Kubernetes Cluster - quantumstream-core"]
+        Ingress["Cilium Ingress / Envoy - Load Balancer Nativo - Port: 9000"]:::customStyle
 
-        %% NODE POOL 1: CÓMPUTO INTERACTIVO Y AGENTES
-        subgraph NS_Agents [Namespace: quantumstream-agents]
-            subgraph P1 [Pod Worker 1]
-                A1["Akka Agent Service<br>HTTP: 9000 | Remote: 25520"]:::customStyle
-                Prom1["Prometheus Exporter<br>Metrics Port: 9090"]:::customStyle
+        subgraph NS_Agents ["Namespace: quantumstream-agents"]
+            subgraph P1 ["Pod Worker 1"]
+                A1["Akka Agent Service - HTTP: 9000 | Remote: 25520"]:::customStyle
+                Prom1["Prometheus Exporter - Metrics Port: 9090"]:::customStyle
             end
 
-            subgraph P2 [Pod Worker 2]
-                A2["Akka Agent Service<br>HTTP: 9000 | Remote: 25520"]:::customStyle
-                Prom2["Prometheus Exporter<br>Metrics Port: 9090"]:::customStyle
+            subgraph P2 ["Pod Worker 2"]
+                A2["Akka Agent Service - HTTP: 9000 | Remote: 25520"]:::customStyle
+                Prom2["Prometheus Exporter - Metrics Port: 9090"]:::customStyle
             end
 
-            subgraph P3 [Pod Worker 3]
-                A3["Akka Agent Service<br>HTTP: 9000 | Remote: 25520"]:::customStyle
-                Prom3["Prometheus Exporter<br>Metrics Port: 9090"]:::customStyle
+            subgraph P3 ["Pod Worker 3"]
+                A3["Akka Agent Service - HTTP: 9000 | Remote: 25520"]:::customStyle
+                Prom3["Prometheus Exporter - Metrics Port: 9090"]:::customStyle
             end
             
-            %% El Cerebro Predictivo interno de Akka
-            IA_Engine["Cache Locality Predictor<br>Internal Akka IA Submodule<br>Optimiza Asignacion de Actores"]:::customStyle
+            IA_Engine["Cache Locality Predictor - Internal Akka IA Submodule - Optimiza Asignación"]:::customStyle
         end
 
-        %% NODE POOL 2: INTELIGENCIA ARTIFICIAL (Nodos con GPUs)
-        subgraph NS_AI [Namespace: quantumstream-ai]
-            LLM["Pod: Local LLM Pool<br>Ollama / vLLM Deployment<br>gRPC API Port: 11434<br>Aceleracion por GPU"]:::customStyle
+        subgraph NS_AI ["Namespace: quantumstream-ai"]
+            LLM["Pod: Local LLM Pool - Ollama / vLLM Deployment - Aceleración por GPU"]:::customStyle
         end
 
-        %% NODE POOL 3: CIENCIA DE DATOS Y WORKFLOWS (Ecosistema MLOps)
-        subgraph NS_MLOps [Namespace: quantumstream-mlops]
-            Jupyter["JupyterHub Server<br>Gestor de Notebooks Corporativos<br>Entorno de Desarrollo | Port: 8000"]:::customStyle
-            Argo["Argo Workflows<br>Orquestador de Pipelines de ML<br>Control de DAGs | Port: 2746"]:::customStyle
+        subgraph NS_MLOps ["Namespace: quantumstream-mlops"]
+            Jupyter["JupyterHub Server - Entorno de Desarrollo | Port: 8000"]:::customStyle
+            Argo["Argo Workflows - Orquestador de Pipelines de ML"]:::customStyle
         end
 
-        %% NODE POOL 4: CÓMPUTO POR LOTES MASIVO (Apache Spark Engine)
-        subgraph NS_Spark [Namespace: quantumstream-spark]
-            SparkOp["Spark on K8s Operator<br>Controlador de Jobs Elasticos<br>Orquesta Malla de Ejecutores"]:::customStyle
-            SparkDriver["Pod: Spark Driver<br>Gestor DAG Analitico<br>Bifurca Carga de Petabytes"]:::customStyle
-            SparkExec["Pods: Spark Executors<br>Nodos de Computo Efimeros<br>Procesamiento Multihilo"]:::customStyle
+        subgraph NS_Spark ["Namespace: quantumstream-spark"]
+            SparkOp["Spark on K8s Operator - Controlador de Jobs Elásticos"]:::customStyle
+            SparkDriver["Pod: Spark Driver - Gestor DAG Analítico"]:::customStyle
+            SparkExec["Pods: Spark Executors - Procesamiento Multihilo"]:::customStyle
         end
 
-        %% NODE POOL 5: PERSISTENCIA Y METADATOS
-        subgraph NS_Storage [Namespace: quantumstream-storage]
-            PG["StatefulSet: PostgreSQL<br>Local Persistent Volume<br>Port: 5432"]:::customStyle
-            Nessie["StatefulSet: Project Nessie<br>Iceberg REST Catalog<br>Port: 8181"]:::customStyle
-            MinIO["StatefulSet: MinIO Distributed<br>S3 Open Source Storage<br>Format: Apache Iceberg<br>Port: 9000"]:::customStyle
+        subgraph NS_Storage ["Namespace: quantumstream-storage"]
+            PG["StatefulSet: PostgreSQL - Port: 5432"]:::customStyle
+            Nessie["StatefulSet: Project Nessie - Catálogo Iceberg REST"]:::customStyle
+            MinIO["StatefulSet: MinIO Distributed - Formato Apache Iceberg"]:::customStyle
         end
 
-        %% NODE POOL 6: MONITOREO Y OBSERVABILIDAD
-        subgraph NS_Monitoring [Namespace: cloud-native-monitoring]
-            Prom["Prometheus Server<br>Scrapes Metrics"]:::customStyle
-            Loki["Grafana Loki<br>Centralizes Logs"]:::customStyle
-            Grafana["Pod: Grafana Dashboards<br>Alertmanager a Webhooks"]:::customStyle
+        subgraph NS_Monitoring ["Namespace: cloud-native-monitoring"]
+            Prom["Prometheus Server - Monitoreo de Métricas"]:::customStyle
+            Loki["Grafana Loki - Centralizador de Logs"]:::customStyle
+            Grafana["Pod: Grafana Dashboards - Alertas e Interfaz"]:::customStyle
         end
     end
 
-    %% CAPA DE INFRAESTRUCTURA COMO CÓDIGO INTERACTIVA (PULUMI)
-    Pulumi["Pulumi IaC Engine<br>Python SDK / Automation API<br>Gobierna Node Pools en Vivo"]:::customStyle
+    Pulumi["Pulumi IaC Engine - Python SDK - Gobierna Node Pools en Vivo"]:::customStyle
 
-    %% Relaciones de Flujo y Comunicación
     User --> Ingress
     Ingress --> A1
     Ingress --> A2
     Ingress --> Jupyter
 
-    %% Intercepción Inteligente de la Consulta antes de crear actores (Ruta Akka)
-    A1 & A2 & A3 --> IA_Engine
-    IA_Engine -.-> A1 & A2 & A3
+    A1 --> IA_Engine
+    A2 --> IA_Engine
+    A3 --> IA_Engine
+    
+    IA_Engine -.-> A1
+    IA_Engine -.-> A2
+    IA_Engine -.-> A3
+    
     A1 <--> A2
     A2 <--> A3
     A3 <--> A1
 
-    %% Orquestación de Modelos y Automatización desde Jupyter/Argo
     Jupyter --> Argo
     Argo --> SparkOp
     Argo --> LLM
 
-    %% Enrutamiento Inteligente hacia la Capa por Lotes (Ruta Spark)
-    A1 & A2 & A3 --> SparkOp
+    A1 --> SparkOp
+    A2 --> SparkOp
+    A3 --> SparkOp
+    
     SparkOp --> SparkDriver
     SparkDriver <--> SparkExec
 
-    %% Conexiones Unificadas de Metadatos y Catálogo
-    A2 & SparkDriver & Jupyter --> Nessie
+    A2 --> Nessie
+    SparkDriver --> Nessie
+    Jupyter --> Nessie
     Nessie --> PG
 
-    %% Conexiones físicas al Almacenamiento Compartido (MinIO)
     A1 --> MinIO
     A2 --> MinIO
     SparkExec --> MinIO
     Jupyter --> MinIO
 
-    %% Llamadas al Namespace de Inteligencia Artificial (Internal K8s DNS)
     A2 --> LLM
 
-    %% Gobernanza de Infraestructura Dinámica por Pulumi
-    A1 & SparkOp & Argo --> Pulumi
-    Pulumi ==> K8S_Cluster
+    A1 --> Pulumi
+    SparkOp --> Pulumi
+    Argo --> Pulumi
+    Pulumi --> K8S_Cluster
 
-    %% Flujo de Monitoreo, Métricas y Logs Abiertos
     Prom1 --> Prom
     Prom2 --> Prom
     Prom3 --> Prom
@@ -484,9 +451,9 @@ graph TB
     SparkExec --> Loki
     Jupyter --> Loki
 
-    %% Conexión interna hacia el panel visual final (Grafana)
     Prom --> Grafana
     Loki --> Grafana
+
 
 ---
 
