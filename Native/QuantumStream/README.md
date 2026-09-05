@@ -31,9 +31,8 @@ Para alcanzar rendimiento de escala masiva, QuantumStream acopla el software dis
 
 ## 📐 Arquitectura Global
 
-<div>
-
-```mermaid
+<div style="overflow-x: auto;">
+<pre>
 
 =========================================================================================================
 =========================================================================================================
@@ -91,7 +90,7 @@ NIVEL 4: CAPA DE CÓMPUTO VECTORIZADO E IA IN-PLACE (Nodos Workers / Enclaves Se
   ┌─────────────────────────────────────────────────────────────────────────────────────────────────────┐
   │                [ NODOS DE HARDWARE ACELERADO COMPARTIDO (Kubernetes Data Pool) ]                    │
   │                                                                                                     │
-  │   🔒 ENCLAVE SEGURO DE HARDWARE: Datos analíticos y vectoriales cifrados en la memoria RAM física.  │
+  │   🔒 ENCLAVE SEGURO DE HARDWARE: Datos analíticos y vectoriales cifrados en la memoria RAM física.   │
   │   🚀 ACCELERACIÓN PERIMETRAL: Tarjeta DPU BlueField asume la carga de red por bypass de kernel.     │
   │                                                                                                     │
   │   ┌───────────────────────────────────┐ ┌───────────────────────────────────┐ ┌───────────────────┐ │
@@ -117,9 +116,9 @@ NIVEL 5: ALMACENAMIENTO DE OBJETOS INTELIGENTE Y SUSTRATO ELÁSTICO (Persistenci
   │   Spark y GPUs en vivo.     │  │ • Guarda estado de Notebooks│  │   SmartSSDs filtran el WHERE. │
   └─────────────────────────────┘  └─────────────────────────────┘  └───────────────────────────────┘
 
-
-```
+</pre>
 </div>
+
 
 ## 🔍 Descripción del Diagrama de Arquitectura Global
 
@@ -155,7 +154,9 @@ La persistencia de los metadatos transaccionales se gestiona de forma nativa med
 
 El modelo de datos de **QuantumStream** rompe con la rigidez de las tablas tradicionales de las bases de datos. No almacena registros en filas estáticas, sino que autogestiona la información de manera desacoplada en **tres niveles conceptuales y físicos**:
 
-```text
+<div style="overflow-x: auto;">
+<pre>
+
 ┌─────────────────────────────────────────────────────────────────────────┐
 │ 1. NIVEL LÓGICO / SEMÁNTICO (El Catálogo en Project Nessie)             │
 │    • Define la estructura lógica: bases de datos, tablas y vistas.      │
@@ -175,7 +176,9 @@ El modelo de datos de **QuantumStream** rompe con la rigidez de las tablas tradi
 │    • data_01.parquet, data_02.parquet, data_N.parquet (Comprimidos)     │
 │    • Soportan tipos complejos y embeddings vectoriales (IA/Búsquedas).  │
 └─────────────────────────────────────────────────────────────────────────┘
-```
+
+</pre>
+</div>
 
 ### 1. Nivel Lógico / Semántico (Capa de Control)
 Gestionado directamente en el Namespace `quantumstream-storage` por **Project Nessie**. No contiene datos físicos, sino que actúa como un control de versiones de metadatos al estilo Git (*Git-for-Data*). Permite la creación de ramas virtuales (ej: `CREATE BRANCH dev_test`) para aislar transformaciones sin duplicar archivos en el almacenamiento y habilita la funcionalidad de "Viaje en el Tiempo" (*Time Travel*) para consultar el estado del modelo en cualquier milisegundo del pasado.
@@ -187,7 +190,9 @@ Gobernado bajo el estándar de **Apache Iceberg**. Estructura un árbol jerárqu
 Los datos definitivos residen en el clúster de **MinIO** en archivos **Apache Parquet** puros de alta compresión. A diferencia de Cassandra o las bases NoSQL que guardan datos en filas (OLTP), Parquet organiza la información en columnas (OLAP). Para potenciar las capacidades de Inteligencia Artificial *In-Place*, los *embeddings* vectoriales de texto (generados localmente por Ollama) se almacenan como **una columna más de arreglos numéricos flotantes de 32 bits** dentro del mismo archivo, permitiendo consultas analíticas híbridas y búsquedas por similitud semántica.
 
 #### 📝 Especificación del Esquema Analítico-Vectorial Híbrido:
-```text
+
+<div style="overflow-x: auto;">
+<pre>
 Column Name          | Data Type       | Capability Acelerada de Hardware y Silicio
 ───────────────────────────────────────────────────────────────────────────────────────
 id_cliente           | INT64           | Filtrado molecular instantáneo en SmartSSD (WHERE)
@@ -196,7 +201,8 @@ nombre_usuario       | VARCHAR         | Enmascaramiento dinámico (Agente de Go
 comentario_crudo     | VARCHAR         | Tokenización e inferencia local (Wasm JIT / Polars)
 comentario_vector    | FIXED_SIZE_LIST | Búsqueda por Similitud Semántica (Distancia Coseno)
 monto_transaccion    | DECIMAL(18,2)   | Operación matemática masiva (SIMD AVX-512 en RAM)
-```
+</pre>
+</div>
 
 ---
 
@@ -205,17 +211,19 @@ monto_transaccion    | DECIMAL(18,2)   | Operación matemática masiva (SIMD AVX
 
 **QuantumStream** integra principios y algoritmos de computación cuántica dentro de la colmena del **Plano de Control Multiagente (Nivel 2)**. Al combinar simuladores y emuladores cuánticos (**Qiskit / Pennylane**), el sistema resuelve la optimización combinatoria y el blindaje criptográfico masivo en milisegundos, anticipándose a las infraestructuras tecnológicas del mañana.
 
-```text
+<div style="overflow-x: auto;">
+<pre>
 ┌─────────────────────────────────────────────────────────────────────────┐
 │ 🪐 PLANO DE CONTROL MULTIAGENTE HÍBRIDO (Clásico-Cuántico)              │
 ├────────────────────────────────────┬────────────────────────────────────┤
 │                                    │                                    │
-│ 🤖 AGENTE OPTIMIZADO (Qiskit QAOA) │ 🛡️ AGENTE GOBERNANZA (NIST Lattice)│
+│ 🤖 AGENTE OPTIMIZADO (Qiskit QAOA) │ 🛡️ AGENTE GOBERNANZA (NIST Lattice) │
 │    • Modela JOINs como un QUBO.    │    • Intercepta tokens gRPC.       │
 │    • Resuelve el orden físico de   │    • Encriptación Post-Cuántica    │
 │      cruces de tablas en miliseg.  │      inmune (ML-KEM / ML-DSA).     │
 └────────────────────────────────────┴────────────────────────────────────┘
-```
+</pre>
+</div>
 
 ### 1. Optimización Cuántica de Consultas (Quantum Query Optimization)
 Cuando un query analítico requiere realizar el cruce (*JOIN*) de decenas de tablas masivas distribuidas en el clúster, calcular la ruta y el orden físico óptimo para combinar los datos genera un problema de explosión combinatoria. Un optimizador tradicional de CPU tarda segundos valiosos evaluando heurísticas estáticas.
@@ -239,7 +247,8 @@ Cada petición binaria que viaja hacia el motor analítico está blindada de for
 
 Este flujo modela el recorrido asíncrono desde la petición del usuario en lenguaje natural hasta el renderizado progresivo de los datos en pantalla:
 
-```text
+<div style="overflow-x: auto;">
+<pre>
 =========================================================================================================================
 🔀 QUANTUMSTREAM: DIAGRAMA DE SECUENCIA INTERACTIVO / BATCH / MLOPS DE EXTREMO A EXTREMO
 =========================================================================================================================
@@ -295,8 +304,8 @@ Este flujo modela el recorrido asíncrono desde la petición del usuario en leng
       │               │                                                                     │                           │
       │◄─(10.Stream Binary Data Chunks)─────────────────────────────────────────────────────┘                           │
       │   Renderizado Progresivo en la Pantalla del Usuario (gRPC-Web Canal Abierto)                                    │
-
-```
+</pre>
+</div>
 
 # 🔍 Descripción del Diagrama de Secuencia E2E
 
@@ -372,7 +381,8 @@ Usa el código con precaución.Con estas dos descripciones perfectamente estruct
   }
 </style>
 
-```mermaid
+<div style="overflow-x: auto;">
+<pre>
 %%{init: { 'theme': 'base', 'themeVariables': { 'background': '#ffffff', 'mainBkg': '#ffffff', 'clusterBkg': '#ffffff', 'lineColor': '#00bfff', 'textColor': '#000000', 'titleColor': '#000000', 'fontSize': '36px', 'labelBackground': '#ffffff', 'edgeLabelBackground': '#ffffff' }, 'flowchart': { 'useMaxWidth': false, 'htmlLabels': true, 'nodeSpacing': 90, 'rankSpacing': 100 }}}%%
 graph TB
     %% Estilos de Contornos y Texto Principal en Negro (Letra Grande)
@@ -502,7 +512,7 @@ graph TB
     %% Conexión interna hacia el panel visual final (Grafana)
     Prom --> Grafana
     Loki --> Grafana
-```
+</pre>
 </div>
 
 
@@ -551,7 +561,8 @@ El proyecto está está diseñado estructuralmente como un **Monorrepo hermétic
 
 Como un monorrepo políglota de alto rendimiento utilizando emojis funcionales para identificar la naturaleza técnica de cada componente:
 
-```text
+<div style="overflow-x: auto;">
+<pre>
 
 quantumstream/
 ├── ⚙️ WORKSPACE                 # Orquestador de compilación políglota (Bazel)
@@ -617,10 +628,14 @@ quantumstream/
         ├── 📊 index.tsx         # Consola de Usuario (AI Chat + SQL + Time Travel)
         └── 🛠️ admin.tsx         # Consola de Administrador (Métricas DPUs, SRE y Energía)
 
-```
+<div style="overflow-x: auto;">
+<pre>
+
 
 🏷️ Glosario Visual de Íconos
 
+<div style="overflow-x: auto;">
+<pre>
 🧠 (Cerebro): Módulos puros de Inteligencia Artificial, traducción semántica, algoritmos predictivos y optimización cognitiva.
 📜 (Pergamino): Contratos de datos inmutables y protocolos de comunicación gRPC de alta velocidad.
 🔌 (Enchufe): Puntos de entrada del sistema (Entrypoints), inicializadores de servidores y funciones main.
@@ -628,4 +643,6 @@ quantumstream/
 🧲 (Imán): Clientes o conectores que atraen y extraen flujos de memoria de manera masiva.
 🐳 / ☸️ / 🧱 (Contenedores/K8s/Ladrillo): Archivos dedicados puramente a la infraestructura física, virtualización, automatización y despliegue en la nube.
 📊 (Gráfica): Vistas visuales destinadas al consumo de los usuarios y analistas para la toma de decisiones.
+</pre>
+</div>
 ---
