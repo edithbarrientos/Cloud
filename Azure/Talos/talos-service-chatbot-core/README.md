@@ -23,7 +23,8 @@ La interacción directa con los canales de mensajería masiva (como WhatsApp Bus
 ### 🎛️ 2.1 Diagrama de Componentes y Ecosistema Dirigido por Eventos
 El microservicio opera bajo el estándar de **Clean Architecture**, aislando de forma estricta las reglas de negocio del dominio de los adaptadores de infraestructura físicos y clientes de red de terceros:
 
-```text
+<div style="overflow-x: auto;">
+    <pre>
 
  🚀 CLIENTE             ⚙️ CHATBOT CORE          🏭 DB FACTORY          🗄️ CORE ENTORNO         🧠 IA ENGINE         🗄️ ADUANAS DE CONTROL
 (WhatsApp)               (Node.js App)         (Strategy Router)      (SQL / Postgres / SAP)   (Python Core)         (RAG / CISO / QA)
@@ -48,7 +49,7 @@ El microservicio opera bajo el estándar de **Clean Architecture**, aislando de 
      │                         │──► 7. Valida Contrato─┼────────────────────────┼───────────────────►│                         │ [talos-shared-contracts]
      │                         │    (camelCase / CB)   │                        │                    │                         │ (Protegido por CB Opossum)
      │                         │                       │                        │                    │                         │
-     │                         │                       │                        │──► 8. Jala Prompts─►│                         │ [Azure OpenAI Service]
+     │                         │                       │                        │─► 8. Jala Prompts─►│                         │ [Azure OpenAI Service]
      │                         │                       │                        │    y Contexto Legal│                         │ (Inferencia Stateless Temp 0.0)
      │                         │                       │                        │                    │                         │
      │                         │◄──────────────────────┼────────────────────────┼────────────────────│                         │ [IAIEngineResponse]
@@ -74,15 +75,15 @@ El microservicio opera bajo el estándar de **Clean Architecture**, aislando de 
      │                         │                       │                        │                    │◄── 13. Firma y Exporta ─┤ [data/reporte_ejecutivo_final.json]
      │                         │                       │                        │                    │    Quality Gate PASS    │ (Libera el Pipeline de CD)
 
-
-```
+   </pre>
+</div>
 
 
 ### 📁 2.3 Estructura del Repositorio (Clean Architecture Layout)
 El árbol físico del proyecto organiza los componentes desacoplando el núcleo lógico inmutable de los marcos de infraestructura web o de nube mutables:
 
-```text
-
+<div style="overflow-x: auto;">
+    <pre>
 
 talos-service-chatbot-core/
 ├── data/
@@ -113,8 +114,8 @@ talos-service-chatbot-core/
 ├── tsconfig.json                  # MANIFEST: Configurador estricto del compilador de TypeScript (tsc)
 └── jest.config.js                 # MANIFEST: Configurador de la suite de pruebas unitarias ts-jest
 
-
-```
+   </pre>
+</div>
 
 ---
 

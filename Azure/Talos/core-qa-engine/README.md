@@ -22,7 +22,10 @@ El despliegue de sistemas basados en Inteligencia Artificial Generativa (GenAI) 
 
 El nuevo mapa de datos abstrae el texto pesado hacia dimensiones, agrupa la telemetría en estructuras compactas y define las directrices de particionamiento físico para el Data Lake:
 
-┌────────────────────────────────────────────────────────┐
+
+<div>
+<pre>
+ ┌───────────────────────────────────────────────────────-┐
  │ 📄 dim_sprints (Particionamiento Físico)               │
  ├────────────────────────────────────────────────────────┤
  │  PK  │ sprint_id       (VARCHAR - Ej: 'S24')           │
@@ -57,15 +60,16 @@ El nuevo mapa de datos abstrae el texto pesado hacia dimensiones, agrupa la tele
 └───────────────────────────▲──────────────────────────────────────────────────────────┘
                             │
                             ▲ (1 a Muchos)
- ┌──────────────────────────┴─────────────────────────────┐
- │ 🎯 dim_casos_uso (Texto Pesado Desacoplado)            │
- ├────────────────────────────────────────────────────────┤
+ ┌──────────────────────────┴──────────────────────────────┐
+ │ 🎯 dim_casos_uso (Texto Pesado Desacoplado)             │
+ ├─────────────────────────────────────────────────────────┤
  │  PK  │ caso_uso_id     (VARCHAR - Ej: 'UC-RETENCION-04')│
- │      │ nombre_flujo    (VARCHAR)                       │
- │      │ business_case   (TEXT - Justificación del ROI)  │
- └────────────────────────────────────────────────────────┘
+ │      │ nombre_flujo    (VARCHAR)                        │
+ │      │ business_case   (TEXT - Justificación del ROI)   │
+ └─────────────────────────────────────────────────────────┘
 
-
+</pre>
+</div>
 
 ---
 
@@ -93,7 +97,8 @@ La telemetría estructurada recolectada en la capa Bronze es procesada por Apach
 ### 🎛️ 2.3 Diagrama de Componentes y Flujo de Eventos (Closed-Loop Pipeline)
 El motor implementa el patrón **Master/Worker** y se encuentra completamente desacoplado en una arquitectura dirigida por eventos para evitar que el consumo de red del inyector de carga degrade el rendimiento de la API receptora:
 
-```text
+<div>
+    <pre>
 
   [ Pipeline de CI/CD ] ──► (HTTP POST /launch) ──► FastAPI (API Maestra - Puerto 9000)
                                                            │
@@ -138,7 +143,8 @@ Dashboard de Sprints.    del pipeline de CD.      vectorial en SVG.          de 
                                                            ▼ (Persistencia de Linaje Corporativo)
                                             [ data/bronze/logs/qa/ ] ◄── Data Lakehouse Landing
 
-```
+    </pre>
+</div>
 
 
 
@@ -146,7 +152,8 @@ Dashboard de Sprints.    del pipeline de CD.      vectorial en SVG.          de 
 
 El siguiente mapa describe el viaje del dato en milisegundos a lo largo de las capas de software, identificando las aduanas de control rígidas y el punto de inspección del motor de QA en bucle cerrado:
 
-```text
+<div>
+    <pre>
 
  🚀 CLIENTE             ⚙️ CHATBOT CORE        🧠 IA ENGINE         🗄️ ADUANAS DE CONTROL
 (WhatsApp)               (Node.js App)       (Python Microservice)     (Redis / RAG / QA)
@@ -170,7 +177,7 @@ El siguiente mapa describe el viaje del dato en milisegundos a lo largo de las c
      │                         │                       │                         │
      │─────────────────────────┼───────────────────────┼─────────────────────────┤
      │                         │                       │                         │
-     │ 📡 ADUANA DE SEGURIDAD Y CERTIFICACIÓN ASÍNCRONA: EL BUCLE CERRADO DE QA        │
+     │ 📡 ADUANA DE SEGURIDAD Y CERTIFICACIÓN ASÍNCRONA: EL BUCLE CERRADO DE QA   │
      │                         │                       │                         │
      │                         │                       │◄── 7. Bombardea ────────│ [core-qa-engine]
      │                         │                       │    500 peticiones       │ (Locust Headless + Jinja2)
@@ -182,14 +189,17 @@ El siguiente mapa describe el viaje del dato en milisegundos a lo largo de las c
      │                         │                       │◄── 9. Firma y Exporta ──│ [data/reporte_ejecutivo_final.json]
      │                         │                       │    Quality Gate PASS    │ (Libera el Pipeline de CD)
 
-```
+  </pre>
+</div>
+
 
 
 ## 📁 2.5 Estructura del Repositorio (Clean Architecture Layout)
 
 El árbol físico de archivos y carpetas se organiza aislando de forma estricta las reglas de negocio de los marcos de infraestructura y frameworks de red:
 
-```text
+<div>
+    <pre>
 core-qa-engine/
 ├── data/
 │   ├── job_config.json            # CONFIG: Parámetros del Job efímero mapeados con Jinja2
@@ -225,7 +235,9 @@ core-qa-engine/
 │       └── qa_chain.py              # PATRÓN CHAIN OF RESPONSIBILITY: Las 7 etapas unificadas
 └── tests/
     └── locustfile.py                # INYECTOR: Hilos concurrentes asíncronos de Locust con Jinja2
-```
+
+  </pre>
+</div>
 
 ---
 
